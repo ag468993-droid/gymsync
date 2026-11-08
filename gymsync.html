@@ -1,0 +1,1905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>GymSync — Smart Gym Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root{--bg:#080808;--sf:#0f0f0f;--card:#161616;--bd:#252525;--ac:#c8ff00;--acd:rgba(200,255,0,.1);--tx:#f0f0f0;--mu:#666;--dg:#ff3b3b;--wn:#ffb800;--ok:#00e676;--r:10px;--sw:240px}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);font-size:14px;line-height:1.5}
+/* Auth */
+#auth{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100}
+.auth-wrap{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:40px;width:400px;max-width:92vw}
+.al{display:flex;align-items:center;gap:10px;margin-bottom:32px}
+.al .icon{width:36px;height:36px;background:var(--ac);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.al h1{font-size:22px;font-weight:900;letter-spacing:-1px}
+.al em{color:var(--ac);font-style:normal}
+.auth-wrap h2{font-size:18px;font-weight:700;margin-bottom:4px}
+.auth-wrap>p{color:var(--mu);font-size:12px;margin-bottom:24px}
+.role-pick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px}
+.role-btn{padding:14px 10px;background:var(--sf);border:2px solid var(--bd);border-radius:10px;cursor:pointer;text-align:center;transition:.15s;color:var(--tx)}
+.role-btn h3{font-size:13px;font-weight:700;margin-bottom:2px}
+.role-btn p{font-size:11px;color:var(--mu)}
+.role-btn.sel{border-color:var(--ac);background:var(--acd)}
+/* Forms */
+.f{margin-bottom:14px}
+.f label{display:block;font-size:11px;font-weight:600;color:var(--mu);margin-bottom:5px;letter-spacing:.3px}
+.f input,.f select,.f textarea{width:100%;background:var(--sf);border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;outline:none;transition:border-color .15s}
+.f input:focus,.f select:focus,.f textarea:focus{border-color:var(--ac)}
+.f select option{background:var(--card)}
+.f textarea{resize:vertical;min-height:70px}
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:.15s;font-family:inherit;white-space:nowrap}
+.bp{background:var(--ac);color:#000}.bp:hover{background:#dfff00}
+.bg{background:transparent;color:var(--tx);border:1px solid var(--bd)}.bg:hover{border-color:var(--ac);color:var(--ac)}
+.bd{background:rgba(255,59,59,.12);color:var(--dg);border:1px solid rgba(255,59,59,.2)}.bd:hover{background:rgba(255,59,59,.2)}
+.bs{background:rgba(0,230,118,.1);color:var(--ok);border:1px solid rgba(0,230,118,.2)}
+.bsm{padding:6px 12px;font-size:11px}
+.bfull{width:100%;justify-content:center}
+/* App layout */
+#app{display:none;height:100vh;overflow:hidden}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:var(--sw);background:var(--sf);border-right:1px solid var(--bd);display:flex;flex-direction:column;z-index:50;transition:transform .25s}
+.sbl{padding:18px 16px 14px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px}
+.sbl .ico{width:28px;height:28px;background:var(--ac);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.sbl span{font-size:16px;font-weight:900;letter-spacing:-.5px}
+.sbl em{color:var(--ac);font-style:normal}
+.srole{margin:10px 12px;padding:5px 10px;background:var(--acd);border:1px solid rgba(200,255,0,.15);border-radius:6px;font-size:10px;font-weight:700;color:var(--ac);letter-spacing:.5px}
+.snav{flex:1;overflow-y:auto;padding:6px 8px}
+.ni{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;cursor:pointer;color:var(--mu);font-size:12px;font-weight:500;transition:.12s;margin-bottom:1px}
+.ni:hover{background:var(--card);color:var(--tx)}
+.ni.active{background:var(--acd);color:var(--ac);border:1px solid rgba(200,255,0,.12)}
+.ni svg{width:15px;height:15px;flex-shrink:0}
+.sfoot{padding:14px;border-top:1px solid var(--bd)}
+.uc{display:flex;align-items:center;gap:9px;padding:10px 12px;background:var(--card);border-radius:8px;border:1px solid var(--bd)}
+.uav{width:30px;height:30px;border-radius:50%;background:var(--ac);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#000;flex-shrink:0}
+.un{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ue{font-size:11px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.main{margin-left:var(--sw);height:100vh;overflow-y:auto;padding:24px}
+.ph{margin-bottom:22px}
+.ph h1{font-size:20px;font-weight:800;letter-spacing:-.5px}
+.ph p{color:var(--mu);font-size:12px;margin-top:3px}
+/* Stats */
+.sg{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:20px}
+.sc{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);padding:16px}
+.sl{font-size:10px;color:var(--mu);font-weight:600;margin-bottom:8px;letter-spacing:.3px}
+.sv{font-size:26px;font-weight:900;letter-spacing:-1px;line-height:1}
+.sd{font-size:10px;margin-top:5px;color:var(--mu)}
+.sc.a .sv{color:var(--ac)}.sc.d .sv{color:var(--dg)}.sc.w .sv{color:var(--wn)}.sc.g .sv{color:var(--ok)}
+/* Charts */
+.cg{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:20px}
+.cc{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);padding:18px}
+.cc h3{font-size:13px;font-weight:600;margin-bottom:14px}
+.cw{position:relative;height:190px}
+/* Table */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:10px;color:var(--mu);font-weight:700;padding:9px 12px;border-bottom:1px solid var(--bd);letter-spacing:.4px}
+td{padding:11px 12px;border-bottom:1px solid var(--bd);font-size:12px}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.018)}
+/* Card */
+.card{background:var(--card);border:1px solid var(--bd);border-radius:var(--r)}
+.ch{padding:14px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+.ch h3{font-size:13px;font-weight:600}
+.cb{padding:18px}
+/* Badge */
+.b{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap}
+.bg-ok{background:rgba(0,230,118,.12);color:var(--ok)}
+.bg-dg{background:rgba(255,59,59,.12);color:var(--dg)}
+.bg-wn{background:rgba(255,184,0,.12);color:var(--wn)}
+.bg-mu{background:rgba(255,255,255,.07);color:var(--mu)}
+.bg-ac{background:var(--acd);color:var(--ac)}
+/* Modal */
+.mbo{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px}
+.mo{background:var(--card);border:1px solid var(--bd);border-radius:14px;width:520px;max-width:100%;max-height:88vh;overflow-y:auto}
+.mh{padding:18px 22px 14px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+.mh h2{font-size:15px;font-weight:700}
+.mbody{padding:22px}
+.mfoot{padding:14px 22px;border-top:1px solid var(--bd);display:flex;justify-content:flex-end;gap:10px}
+.xbtn{background:none;border:none;color:var(--mu);cursor:pointer;font-size:20px;line-height:1;padding:2px}
+.xbtn:hover{color:var(--tx)}
+/* Misc */
+.flex{display:flex}.fbet{display:flex;align-items:center;justify-content:space-between}.gap{gap:10px}
+.mb16{margin-bottom:16px}.mb20{margin-bottom:20px}
+.tmu{color:var(--mu)}.tac{color:var(--ac)}.tsm{font-size:11px}
+.es{text-align:center;padding:48px 20px;color:var(--mu)}
+.es p{font-size:13px;margin-top:8px}
+.sb{display:flex;align-items:center;background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:0 12px;gap:8px;flex:1;min-width:200px}
+.sb input{background:none;border:none;color:var(--tx);padding:9px 0;font-size:12px;outline:none;flex:1;font-family:inherit}
+.tb{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.mav{width:34px;height:34px;border-radius:50%;background:var(--acd);border:1px solid rgba(200,255,0,.2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--ac);flex-shrink:0}
+.pb{background:var(--bd);border-radius:99px;height:5px;overflow:hidden;margin-top:6px}
+.pf{height:100%;background:var(--ac);border-radius:99px}
+/* Mobile topbar */
+.topbar{display:none;position:fixed;top:0;left:0;right:0;height:54px;background:var(--sf);border-bottom:1px solid var(--bd);align-items:center;justify-content:space-between;padding:0 14px;z-index:60}
+.hbg{background:none;border:none;color:var(--tx);cursor:pointer;padding:6px;font-size:20px}
+.sov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:49}
+/* Store */
+.pg{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+.pc{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;transition:.15s}
+.pc:hover{border-color:rgba(200,255,0,.3)}
+.pi{height:130px;background:var(--sf);display:flex;align-items:center;justify-content:center;font-size:48px}
+.pif{padding:12px}
+.pn{font-size:12px;font-weight:700;margin-bottom:3px}
+.pbr{font-size:10px;color:var(--mu);margin-bottom:8px}
+.ppr{font-size:17px;font-weight:900;color:var(--ac)}
+.pst{font-size:10px;color:var(--mu)}
+/* QR */
+.qrc{display:flex;flex-direction:column;align-items:center;padding:28px;background:var(--card);border:1px solid var(--bd);border-radius:14px;max-width:300px;margin:0 auto}
+.qrw{background:#fff;padding:14px;border-radius:8px;margin-bottom:14px}
+/* Membership card */
+.mc{background:linear-gradient(135deg,#161616,#1e1e1e);border:1px solid var(--ac);border-radius:14px;padding:22px;position:relative;overflow:hidden;margin-bottom:16px}
+.mc::after{content:'';position:absolute;top:-50px;right:-50px;width:130px;height:130px;background:var(--acd);border-radius:50%}
+.mcp{font-size:11px;color:var(--ac);font-weight:700;margin-bottom:6px}
+.mcn{font-size:18px;font-weight:900;margin-bottom:14px}
+.mcr{display:flex;justify-content:space-between;margin-bottom:8px}
+.mcr span{font-size:10px;color:var(--mu)}.mcr strong{font-size:12px;font-weight:600}
+/* Tabs */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--bd);margin-bottom:18px}
+.tb2{padding:7px 14px;background:none;border:none;color:var(--mu);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;margin-bottom:-1px;transition:.12s}
+.tb2.active{color:var(--tx);border-bottom-color:var(--ac)}
+/* Notif */
+.ni2{padding:14px;border-bottom:1px solid var(--bd);display:flex;gap:12px;align-items:flex-start}
+.ni2:last-child{border-bottom:none}
+.ni2.unr{background:rgba(200,255,0,.025)}
+.ndot{width:7px;height:7px;background:var(--ac);border-radius:50%;flex-shrink:0;margin-top:5px}
+/* Timeline */
+.tline{padding:0 0 20px 20px;border-left:2px solid var(--bd)}
+.te{position:relative;margin-bottom:20px}
+.te::before{content:'';position:absolute;left:-25px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--ac);border:2px solid var(--bg)}
+/* Info rows */
+.ir{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bd)}
+.ir:last-child{border-bottom:none}
+.ir .irl{font-size:12px;color:var(--mu)}.ir .irv{font-size:12px;font-weight:600}
+/* Cart */
+.ci{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--bd)}
+.ci:last-child{border-bottom:none}
+.cbdg{background:var(--dg);color:#fff;border-radius:50%;width:17px;height:17px;font-size:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+/* Detail header */
+.dh{display:flex;gap:16px;align-items:flex-start;margin-bottom:22px}
+.dav{width:64px;height:64px;border-radius:50%;background:var(--acd);border:2px solid rgba(200,255,0,.3);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;color:var(--ac);flex-shrink:0}
+/* Scanner */
+.scanner-box{background:var(--card);border:2px dashed var(--bd);border-radius:14px;padding:40px;text-align:center;max-width:460px;margin:0 auto}
+.scan-result{background:var(--card);border:1px solid var(--ac);border-radius:12px;padding:20px;max-width:400px;margin:16px auto 0}
+/* Alert */
+.alert{padding:12px 16px;border-radius:8px;font-size:12px;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.alert-ok{background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.2);color:var(--ok)}
+.alert-wn{background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.2);color:var(--wn)}
+.alert-dg{background:rgba(255,59,59,.1);border:1px solid rgba(255,59,59,.2);color:var(--dg)}
+/* Settings */
+.sg2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+/* Report numbers */
+.rbig{font-size:36px;font-weight:900;color:var(--ac);letter-spacing:-2px}
+/* Responsive */
+@media(max-width:768px){
+.topbar{display:flex}
+.sidebar{transform:translateX(-100%);top:0}
+.sidebar.open{transform:translateX(0)}
+.sov.open{display:block}
+.main{margin-left:0;padding:68px 14px 20px}
+.cg{grid-template-columns:1fr}
+.sg{grid-template-columns:1fr 1fr}
+.row-2{grid-template-columns:1fr}
+.sg2{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth">
+<div class="auth-wrap">
+  <div class="al">
+    <div class="icon">💪</div>
+    <h1>Gym<em>Sync</em></h1>
+  </div>
+  <h2>Welcome back</h2>
+  <p>Your Gym. Your Members. One Smart System.</p>
+  <div class="role-pick" id="rolePick">
+    <div class="role-btn sel" onclick="GS.pickRole('owner',this)">
+      <div style="font-size:22px;margin-bottom:4px">🏢</div>
+      <h3>Gym Owner</h3>
+      <p>Admin panel</p>
+    </div>
+    <div class="role-btn" onclick="GS.pickRole('member',this)">
+      <div style="font-size:22px;margin-bottom:4px">🏋️</div>
+      <h3>Member</h3>
+      <p>Member portal</p>
+    </div>
+  </div>
+  <div class="f"><label>EMAIL</label><input type="email" id="loginEmail" value="owner@gymsync.com" placeholder="your@email.com"></div>
+  <div class="f" style="margin-bottom:20px"><label>PASSWORD</label><input type="password" id="loginPw" value="gym123" placeholder="••••••••"></div>
+  <div id="loginErr" style="display:none" class="alert alert-dg">❌ Invalid credentials</div>
+  <button class="btn bp bfull" onclick="GS.login()" style="margin-bottom:16px">Sign In →</button>
+  <p style="text-align:center;color:var(--mu);font-size:11px">Demo: <strong style="color:var(--ac)">owner@gymsync.com</strong> or <strong style="color:var(--ac)">john@gymsync.com</strong> / password: <strong style="color:var(--ac)">gym123</strong></p>
+</div>
+</div>
+
+<!-- APP -->
+<div id="app">
+<div class="sov" id="sov" onclick="GS.closeSidebar()"></div>
+<!-- Sidebar -->
+<nav class="sidebar" id="sidebar">
+  <div class="sbl">
+    <div class="ico">💪</div>
+    <span>Gym<em>Sync</em></span>
+  </div>
+  <div class="srole" id="sideRole">OWNER PANEL</div>
+  <div class="snav" id="sideNav"></div>
+  <div class="sfoot">
+    <div id="syncDot" style="font-size:10px;color:var(--mu);text-align:center;padding:5px 0 8px;letter-spacing:.2px">💾 Local only</div>
+    <div class="uc">
+      <div class="uav" id="sideAv">O</div>
+      <div style="flex:1;min-width:0">
+        <div class="un" id="sideUN">Owner</div>
+        <div class="ue" id="sideUE">owner@gymsync.com</div>
+      </div>
+    </div>
+  </div>
+</nav>
+<!-- Mobile topbar -->
+<div class="topbar">
+  <button class="hbg" onclick="GS.openSidebar()">☰</button>
+  <span style="font-size:15px;font-weight:800">Gym<em style="color:var(--ac)">Sync</em></span>
+  <button class="btn bg bsm" onclick="GS.logout()">Out</button>
+</div>
+<!-- Main content -->
+<main class="main" id="main"></main>
+</div>
+
+<!-- Modal -->
+<div id="mCon" style="display:none" class="mbo" onclick="if(event.target===this)GS.closeModal()"></div>
+
+<script>
+const GS = {
+ role:'owner', page:'dashboard', cart:[], user:null, chartInst:{}, sb:null, sbReady:false,
+
+ // ── DB helpers ──────────────────────────────────────────────
+ get(k){try{return JSON.parse(localStorage.getItem('gs_'+k)||'[]')}catch{return[]}},
+ set(k,d){localStorage.setItem('gs_'+k,JSON.stringify(d));this.pushCloud(k,d);},
+ uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)},
+
+ // ── Supabase cloud sync ──────────────────────────────────────
+ initSB(){
+  const url=localStorage.getItem('gs_sb_url')||'';
+  const key=localStorage.getItem('gs_sb_key')||'';
+  if(url&&key&&typeof supabase!=='undefined'){
+   try{this.sb=supabase.createClient(url,key);this.sbReady=true;return true;}
+   catch(e){console.error('Supabase init error',e);}
+  }
+  this.sbReady=false;return false;
+ },
+ async syncDown(){
+  if(!this.sb)return;
+  this.dot('🔄 Syncing…','var(--mu)');
+  try{
+   const{data,error}=await this.sb.from('app_data').select('*');
+   if(error)throw error;
+   (data||[]).forEach(r=>localStorage.setItem('gs_'+r.id,JSON.stringify(r.data)));
+   this.dot('☁️ Cloud synced','var(--ok)');
+  }catch(e){console.error(e);this.dot('⚠️ Sync error','var(--dg)');}
+ },
+ dot(txt,color){const el=document.getElementById('syncDot');if(el){el.textContent=txt;el.style.color=color;}},
+ pushCloud(k,d){
+  if(!this.sb)return;
+  this.sb.from('app_data').upsert({id:k,data:d,updated_at:new Date().toISOString()},{onConflict:'id'})
+   .then(({error})=>{if(error){console.error(error);this.dot('⚠️ Not saved','var(--dg)');}else this.dot('☁️ Saved','var(--ok)');});
+ },
+ async testSBConnection(url,key){
+  try{
+   const c=supabase.createClient(url,key);
+   const{error}=await c.from('app_data').select('id').limit(1);
+   return !error;
+  }catch{return false;}
+ },
+
+ // ── Seed demo data ───────────────────────────────────────────
+ seed(){
+  if(localStorage.getItem('gs_seeded'))return;
+  const gid='gym1';
+  const now=new Date();
+  const d=(n)=>new Date(now.getTime()+n*86400000).toISOString().split('T')[0];
+
+  this.set('users',[
+   {id:'u1',email:'owner@gymsync.com',pw:'gym123',role:'owner',name:'Rahul Sharma',gid,phone:'9876543210'},
+   {id:'u2',email:'john@gymsync.com',pw:'gym123',role:'member',name:'John Doe',gid,phone:'9871234560'},
+   {id:'u3',email:'priya@gymsync.com',pw:'gym123',role:'member',name:'Priya Patel',gid,phone:'9870000001'},
+   {id:'u4',email:'arjun@gymsync.com',pw:'gym123',role:'member',name:'Arjun Singh',gid,phone:'9870000002'},
+   {id:'u5',email:'meera@gymsync.com',pw:'gym123',role:'member',name:'Meera Nair',gid,phone:'9870000003'},
+   {id:'u6',email:'vikram@gymsync.com',pw:'gym123',role:'member',name:'Vikram Bose',gid,phone:'9870000004'},
+  ]);
+  this.set('plans',[
+   {id:'p1',gid,name:'Monthly',months:1,price:999,desc:'Full access for 1 month',benefits:'All equipment, Locker'},
+   {id:'p2',gid,name:'Quarterly',months:3,price:2499,desc:'Best value for 3 months',benefits:'All equipment, Locker, 1 PT session'},
+   {id:'p3',gid,name:'Half-Yearly',months:6,price:4499,desc:'6 months full access',benefits:'All equipment, Locker, 2 PT sessions, Supplements discount'},
+   {id:'p4',gid,name:'Yearly',months:12,price:7999,desc:'Best annual deal',benefits:'All equipment, Locker, 5 PT sessions, Supplement discount 10%'},
+  ]);
+  this.set('members',[
+   {id:'m1',uid:'u2',gid,name:'John Doe',email:'john@gymsync.com',phone:'9871234560',age:28,gender:'Male',plan:'p2',start:d(-30),end:d(60),status:'active',mid:'GS-1001',addr:'123 MG Road, Mumbai'},
+   {id:'m2',uid:'u3',gid,name:'Priya Patel',email:'priya@gymsync.com',phone:'9870000001',age:25,gender:'Female',plan:'p1',start:d(-28),end:d(3),status:'expiring',mid:'GS-1002',addr:'45 Park St, Delhi'},
+   {id:'m3',uid:'u4',gid,name:'Arjun Singh',email:'arjun@gymsync.com',phone:'9870000002',age:32,gender:'Male',plan:'p4',start:d(-90),end:d(275),status:'active',mid:'GS-1003',addr:'78 LB Nagar, Hyderabad'},
+   {id:'m4',uid:'u5',gid,name:'Meera Nair',email:'meera@gymsync.com',phone:'9870000003',age:27,gender:'Female',plan:'p1',start:d(-40),end:d(-10),status:'expired',mid:'GS-1004',addr:'90 Anna Nagar, Chennai'},
+   {id:'m5',uid:'u6',gid,name:'Vikram Bose',email:'vikram@gymsync.com',phone:'9870000004',age:35,gender:'Male',plan:'p1',start:d(-15),end:d(15),status:'active',mid:'GS-1005',addr:'56 Whitefield, Bangalore'},
+  ]);
+  const methods=['Cash','UPI','Card','Net Banking'];
+  const txs=[];
+  for(let i=0;i<12;i++){
+   const ms=['m1','m2','m3','m4','m5'];
+   const m=ms[i%5];
+   const mb=this.get('members').find(x=>x.id===m);
+   const pl=this.get('plans').find(x=>x.id===mb?.plan)||{name:'Monthly',price:999};
+   txs.push({id:this.uid(),gid,mid:m,mname:mb?.name||'',amount:pl.price,date:d(-i*5),method:methods[i%4],plan:pl.name,status:'paid',ref:'TXN'+Math.floor(Math.random()*900000+100000)});
+  }
+  this.set('transactions',txs);
+  this.set('products',[
+   {id:'pr1',gid,name:'Gold Standard Whey',brand:'Optimum Nutrition',cat:'Whey Protein',price:3499,stock:18,desc:'100% whey protein, 24g protein per serving',emoji:'🥛'},
+   {id:'pr2',gid,name:'Creatine Monohydrate',brand:'MuscleTech',cat:'Creatine',price:799,stock:35,desc:'Pure creatine monohydrate, 5g per serving',emoji:'💊'},
+   {id:'pr3',gid,name:'Mass Gainer XXL',brand:'BigMuscles',cat:'Mass Gainer',price:2499,stock:12,desc:'High calorie mass gainer, 1250 cal per serving',emoji:'🏋️'},
+   {id:'pr4',gid,name:'Pre-Workout Charge',brand:'Cellucor',cat:'Pre-Workout',price:1899,stock:0,desc:'Explosive energy and focus formula',emoji:'⚡'},
+   {id:'pr5',gid,name:'Whey Isolate Pro',brand:'MyProtein',cat:'Whey Protein',price:4299,stock:8,desc:'Ultra-pure whey isolate, 90% protein',emoji:'🥤'},
+   {id:'pr6',gid,name:'Peanut Butter Bar',brand:'RiteBite',cat:'Protein Bars',price:149,stock:60,desc:'High protein snack bar, 20g protein',emoji:'🍫'},
+   {id:'pr7',gid,name:'BCAA Amino Energy',brand:'ON',cat:'Amino Acids',price:1599,stock:5,desc:'Essential amino acids for recovery',emoji:'💪'},
+   {id:'pr8',gid,name:'Omega-3 Fish Oil',brand:'HealthKart',cat:'Supplements',price:599,stock:25,desc:'Pure fish oil capsules, heart and joint health',emoji:'🐟'},
+  ]);
+  const orderMembers=['m1','m2','m3'];
+  this.set('orders',[
+   {id:'o1',gid,mid:'m1',mname:'John Doe',items:[{pid:'pr1',name:'Gold Standard Whey',qty:1,price:3499},{pid:'pr2',name:'Creatine Monohydrate',qty:2,price:799}],total:5097,status:'delivered',date:d(-15)},
+   {id:'o2',gid,mid:'m3',mname:'Arjun Singh',items:[{pid:'pr5',name:'Whey Isolate Pro',qty:1,price:4299}],total:4299,status:'processing',date:d(-3)},
+   {id:'o3',gid,mid:'m2',mname:'Priya Patel',items:[{pid:'pr6',name:'Peanut Butter Bar',qty:4,price:149}],total:596,status:'pending',date:d(-1)},
+  ]);
+  const att=[];
+  for(let i=0;i<20;i++){
+   const ms=['m1','m2','m3','m5'];
+   att.push({id:this.uid(),gid,mid:ms[i%4],mname:['John Doe','Priya Patel','Arjun Singh','Vikram Bose'][i%4],date:d(-i),time:['06:30','07:15','08:00','09:30','17:00','18:30'][i%6]});
+  }
+  this.set('attendance',att);
+  this.set('notifications',[
+   {id:'n1',uid:'u1',gid,msg:'Priya Patel\'s membership expires in 3 days',type:'warn',date:d(0),read:false},
+   {id:'n2',uid:'u1',gid,msg:'New payment received from John Doe – ₹2,499',type:'ok',date:d(-1),read:false},
+   {id:'n3',uid:'u1',gid,msg:'Low stock: BCAA Amino Energy (5 left)',type:'warn',date:d(-2),read:true},
+   {id:'n4',uid:'u1',gid,msg:'Meera Nair\'s membership has expired',type:'dg',date:d(-10),read:true},
+   {id:'n5',uid:'u2',gid,msg:'Your membership expires on '+d(60)+'. Renew now!',type:'ok',date:d(-1),read:false},
+   {id:'n6',uid:'u2',gid,msg:'Order #o1 delivered successfully',type:'ok',date:d(-15),read:true},
+  ]);
+  localStorage.setItem('gs_seeded','1');
+ },
+
+ // ── Auth ─────────────────────────────────────────────────────
+ pickRole(r,el){
+  this.role=r;
+  document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+  const e=document.getElementById('loginEmail'),p=document.getElementById('loginPw');
+  if(r==='owner'){e.value='owner@gymsync.com';p.value='gym123';}
+  else{e.value='john@gymsync.com';p.value='gym123';}
+ },
+ login(){
+  const email=document.getElementById('loginEmail').value.trim().toLowerCase();
+  const pw=document.getElementById('loginPw').value;
+  const users=this.get('users');
+  const u=users.find(x=>x.email.toLowerCase()===email&&x.pw===pw);
+  const err=document.getElementById('loginErr');
+  if(!u){err.style.display='flex';return;}
+  err.style.display='none';
+  this.user=u;
+  this.role=u.role;
+  this.page=u.role==='owner'?'dashboard':'home';
+  this.cart=[];
+  document.getElementById('auth').style.display='none';
+  document.getElementById('app').style.display='block';
+  this.renderSidebar();
+  this.initSB();
+  if(this.sb){
+   this.dot('🔄 Syncing…','var(--mu)');
+   this.syncDown().then(()=>this.render());
+  }else{
+   this.render();
+   this.dot('💾 Local only','var(--mu)');
+  }
+ },
+ logout(){
+  this.user=null;this.cart=[];
+  document.getElementById('app').style.display='none';
+  document.getElementById('auth').style.display='flex';
+  Object.values(this.chartInst).forEach(c=>{try{c.destroy();}catch{}});
+  this.chartInst={};
+ },
+
+ // ── Navigation ───────────────────────────────────────────────
+ go(page){
+  this.page=page;
+  this.closeSidebar();
+  this.render();
+  document.getElementById('main').scrollTop=0;
+  document.querySelectorAll('.ni').forEach(n=>{
+   n.classList.toggle('active',n.dataset.page===page);
+  });
+ },
+ openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('sov').classList.add('open')},
+ closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sov').classList.remove('open')},
+
+ // ── Sidebar render ───────────────────────────────────────────
+ renderSidebar(){
+  const u=this.user;
+  document.getElementById('sideRole').textContent=u.role==='owner'?'OWNER PANEL':'MEMBER PORTAL';
+  document.getElementById('sideAv').textContent=u.name[0];
+  document.getElementById('sideUN').textContent=u.name;
+  document.getElementById('sideUE').textContent=u.email;
+  const ownerNav=[
+   {page:'dashboard',icon:'📊',label:'Dashboard'},
+   {page:'members',icon:'👥',label:'Members'},
+   {page:'plans',icon:'📋',label:'Membership Plans'},
+   {page:'qr',icon:'🔲',label:'QR Scanner'},
+   {page:'attendance',icon:'📅',label:'Attendance'},
+   {page:'fees',icon:'💰',label:'Fee Management'},
+   {page:'transactions',icon:'💳',label:'Transactions'},
+   {page:'inventory',icon:'📦',label:'Inventory / Stock'},
+   {page:'store-mgmt',icon:'🏪',label:'Supplement Store'},
+   {page:'orders',icon:'🛒',label:'Orders'},
+   {page:'reports',icon:'📈',label:'Reports'},
+   {page:'notif',icon:'🔔',label:'Notifications'},
+   {page:'settings',icon:'⚙️',label:'Settings'},
+  ];
+  const memberNav=[
+   {page:'home',icon:'🏠',label:'Home'},
+   {page:'my-membership',icon:'🎫',label:'My Membership'},
+   {page:'pay-fees',icon:'💳',label:'Pay Fees'},
+   {page:'payment-history',icon:'📜',label:'Payment History'},
+   {page:'shop',icon:'🛍️',label:'Supplement Store'},
+   {page:'my-orders',icon:'📦',label:'My Orders'},
+   {page:'my-qr',icon:'🔲',label:'My QR Code'},
+   {page:'my-attendance',icon:'📅',label:'My Attendance'},
+   {page:'member-notif',icon:'🔔',label:'Notifications'},
+   {page:'my-profile',icon:'👤',label:'My Profile'},
+  ];
+  const nav=u.role==='owner'?ownerNav:memberNav;
+  const html=nav.map(n=>`<div class="ni${this.page===n.page?' active':''}" data-page="${n.page}" onclick="GS.go('${n.page}')">${n.icon} ${n.label}</div>`).join('');
+  document.getElementById('sideNav').innerHTML=html+'<div class="ni" onclick="GS.logout()">🚪 Logout</div>';
+ },
+
+ // ── Main render dispatcher ───────────────────────────────────
+ render(){
+  const r={
+   dashboard:()=>this.rDashboard(),
+   members:()=>this.rMembers(),
+   'member-view':()=>this.rMemberView(),
+   plans:()=>this.rPlans(),
+   qr:()=>this.rQR(),
+   attendance:()=>this.rAttendance(),
+   fees:()=>this.rFees(),
+   transactions:()=>this.rTransactions(),
+   inventory:()=>this.rInventory(),
+   'store-mgmt':()=>this.rStoreMgmt(),
+   orders:()=>this.rOrders(),
+   reports:()=>this.rReports(),
+   notif:()=>this.rNotif(),
+   settings:()=>this.rSettings(),
+   // member
+   home:()=>this.rMHome(),
+   'my-membership':()=>this.rMyMembership(),
+   'pay-fees':()=>this.rPayFees(),
+   'payment-history':()=>this.rPayHistory(),
+   shop:()=>this.rShop(),
+   'my-orders':()=>this.rMyOrders(),
+   'my-qr':()=>this.rMyQR(),
+   'my-attendance':()=>this.rMyAttendance(),
+   'member-notif':()=>this.rMemberNotif(),
+   'my-profile':()=>this.rMyProfile(),
+   cart:()=>this.rCart(),
+  };
+  Object.values(this.chartInst).forEach(c=>{try{c.destroy();}catch{}});
+  this.chartInst={};
+  (r[this.page]||r.dashboard)();
+ },
+
+ // ── Helpers ──────────────────────────────────────────────────
+ statusBadge(s){
+  const m={active:'<span class="b bg-ok">Active</span>',expired:'<span class="b bg-dg">Expired</span>',expiring:'<span class="b bg-wn">Expiring Soon</span>',pending:'<span class="b bg-mu">Pending</span>',paid:'<span class="b bg-ok">Paid</span>',processing:'<span class="b bg-ac">Processing</span>',delivered:'<span class="b bg-ok">Delivered</span>',cancelled:'<span class="b bg-dg">Cancelled</span>'};
+  return m[s]||`<span class="b bg-mu">${s}</span>`;
+ },
+ daysLeft(end){
+  const d=Math.ceil((new Date(end)-new Date())/(86400000));
+  return d;
+ },
+ fmt(n){return'₹'+(n||0).toLocaleString('en-IN')},
+ planName(pid){const p=this.get('plans').find(x=>x.id===pid);return p?p.name:'—'},
+ memberForUser(){return this.get('members').find(m=>m.uid===this.user.id)},
+ unreadCount(){return this.get('notifications').filter(n=>n.uid===this.user.id&&!n.read).length},
+
+ // ══════════════════════════════════════════════════════════════
+ // OWNER PAGES
+ // ══════════════════════════════════════════════════════════════
+
+ rDashboard(){
+  const members=this.get('members').filter(m=>m.gid===this.user.gid);
+  const txs=this.get('transactions').filter(t=>t.gid===this.user.gid&&t.status==='paid');
+  const products=this.get('products').filter(p=>p.gid===this.user.gid);
+  const today=new Date().toISOString().split('T')[0];
+  const active=members.filter(m=>m.status==='active').length;
+  const expired=members.filter(m=>m.status==='expired').length;
+  const expiring=members.filter(m=>m.status==='expiring').length;
+  const totalRev=txs.reduce((s,t)=>s+t.amount,0);
+  const todayRev=txs.filter(t=>t.date===today).reduce((s,t)=>s+t.amount,0);
+  const lowStock=products.filter(p=>p.stock>0&&p.stock<10).length;
+
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const now=new Date();
+  const revByMonth=Array(6).fill(0);
+  txs.forEach(t=>{
+   const td=new Date(t.date);
+   const diff=(now.getMonth()-td.getMonth()+12)%12;
+   if(diff<6)revByMonth[5-diff]+=t.amount;
+  });
+  const mLabels=Array(6).fill(0).map((_,i)=>months[(now.getMonth()-5+i+12)%12]);
+
+  const ov=this.getDashOv();
+  const ovActive=Object.keys(ov).length>0;
+  const dTotal=ov.total!==undefined?ov.total:members.length;
+  const dActive=ov.active!==undefined?ov.active:active;
+  const dRev=ov.totalRev!==undefined?ov.totalRev:totalRev;
+  const dToday=ov.todayRev!==undefined?ov.todayRev:todayRev;
+  document.getElementById('main').innerHTML=`
+   <div class="ph fbet">
+    <div><h1>Dashboard</h1><p>Welcome back, ${this.user.name}! Here's your gym overview.</p></div>
+    <div style="display:flex;gap:8px;align-items:center">
+     ${ovActive?'<span class="b bg-wn" style="font-size:10px">✏️ Overrides active</span>':''}
+     <button class="btn bg bsm" onclick="GS.editDashboardModal()">✏️ Edit Dashboard</button>
+    </div>
+   </div>
+   <div class="sg">
+    <div class="sc a"><div class="sl">TOTAL MEMBERS${ov.total!==undefined?' ✏️':''}</div><div class="sv">${dTotal}</div><div class="sd">All registered members</div></div>
+    <div class="sc g"><div class="sl">ACTIVE${ov.active!==undefined?' ✏️':''}</div><div class="sv">${dActive}</div><div class="sd">Currently active memberships</div></div>
+    <div class="sc d"><div class="sl">EXPIRED</div><div class="sv">${expired}</div><div class="sd">Require renewal</div></div>
+    <div class="sc w"><div class="sl">EXPIRING SOON</div><div class="sv">${expiring}</div><div class="sd">Within next 7 days</div></div>
+    <div class="sc a"><div class="sl">TOTAL REVENUE${ov.totalRev!==undefined?' ✏️':''}</div><div class="sv" style="font-size:20px">${this.fmt(dRev)}</div><div class="sd">All confirmed payments</div></div>
+    <div class="sc g"><div class="sl">TODAY'S COLLECTION${ov.todayRev!==undefined?' ✏️':''}</div><div class="sv" style="font-size:20px">${this.fmt(dToday)}</div><div class="sd">Payments received today</div></div>
+    <div class="sc w"><div class="sl">LOW STOCK ITEMS</div><div class="sv">${lowStock}</div><div class="sd">Products below 10 units</div></div>
+    <div class="sc"><div class="sl">TOTAL PRODUCTS</div><div class="sv">${products.length}</div><div class="sd">In inventory</div></div>
+   </div>
+   <div class="cg">
+    <div class="cc"><h3>Monthly Revenue (Last 6 Months)</h3><div class="cw"><canvas id="revChart"></canvas></div></div>
+    <div class="cc"><h3>Membership Status</h3><div class="cw"><canvas id="statusChart"></canvas></div></div>
+   </div>
+   <div class="card">
+    <div class="ch"><h3>Recent Transactions</h3><button class="btn bg bsm" onclick="GS.go('transactions')">View All</button></div>
+    <div class="tw"><table><thead><tr><th>MEMBER</th><th>PLAN</th><th>AMOUNT</th><th>METHOD</th><th>DATE</th><th>STATUS</th></tr></thead>
+    <tbody>${this.get('transactions').filter(t=>t.gid===this.user.gid).slice(0,5).map(t=>`
+    <tr><td><b>${t.mname}</b></td><td>${t.plan}</td><td>${this.fmt(t.amount)}</td><td>${t.method}</td><td>${t.date}</td><td>${this.statusBadge(t.status)}</td></tr>`).join('')}</tbody></table></div>
+   </div>`;
+
+  setTimeout(()=>{
+   const rCtx=document.getElementById('revChart')?.getContext('2d');
+   if(rCtx)this.chartInst.rev=new Chart(rCtx,{type:'line',data:{labels:mLabels,datasets:[{label:'Revenue',data:revByMonth,borderColor:'#c8ff00',backgroundColor:'rgba(200,255,0,.08)',tension:.4,fill:true,pointBackgroundColor:'#c8ff00',pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#252525'},ticks:{color:'#666'}},y:{grid:{color:'#252525'},ticks:{color:'#666',callback:v=>'₹'+v.toLocaleString('en-IN')}}}}});
+   const sCtx=document.getElementById('statusChart')?.getContext('2d');
+   if(sCtx)this.chartInst.st=new Chart(sCtx,{type:'doughnut',data:{labels:['Active','Expiring','Expired'],datasets:[{data:[active,expiring,expired],backgroundColor:['rgba(0,230,118,.8)','rgba(255,184,0,.8)','rgba(255,59,59,.8)'],borderColor:'#161616',borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#aaa',padding:12,font:{size:11}}}}}});
+  },50);
+ },
+
+ rMembers(){
+  const members=this.get('members').filter(m=>m.gid===this.user.gid);
+  document.getElementById('main').innerHTML=`
+   <div class="ph"><h1>Members</h1><p>Manage all your gym members</p></div>
+   <div class="tb">
+    <div class="sb"><span>🔍</span><input id="msrch" placeholder="Search by name, mobile, ID…" oninput="GS.filterMembers()"></div>
+    <select class="btn bg" id="mfilt" onchange="GS.filterMembers()"><option value="">All Status</option><option value="active">Active</option><option value="expiring">Expiring Soon</option><option value="expired">Expired</option></select>
+    <button class="btn bp" onclick="GS.addMemberModal()">+ Add Member</button>
+   </div>
+   <div class="card"><div class="tw"><table><thead><tr><th>MEMBER</th><th>MEMBER ID</th><th>PHONE</th><th>PLAN</th><th>EXPIRY</th><th>STATUS</th><th>ACTIONS</th></tr></thead>
+   <tbody id="memberTbl">${this.renderMemberRows(members)}</tbody></table></div></div>`;
+ },
+ renderMemberRows(members){
+  if(!members.length)return`<tr><td colspan="7"><div class="es">👥<p>No members found</p></div></td></tr>`;
+  return members.map(m=>{
+   const dl=this.daysLeft(m.end);
+   return`<tr>
+    <td><div class="flex gap" style="align-items:center"><div class="mav">${m.name[0]}</div><div><div style="font-weight:600">${m.name}</div><div class="tsm tmu">${m.email}</div></div></div></td>
+    <td><span class="b bg-ac">${m.mid}</span></td><td>${m.phone}</td>
+    <td>${this.planName(m.plan)}</td>
+    <td><div>${m.end}</div><div class="tsm tmu">${dl>0?dl+' days left':'Expired'}</div></td>
+    <td>${this.statusBadge(m.status)}</td>
+    <td><div class="flex gap">
+     <button class="btn bg bsm" onclick="GS.viewMember('${m.id}')">View</button>
+     <button class="btn bg bsm" onclick="GS.editMemberModal('${m.id}')">Edit</button>
+     <button class="btn bd bsm" onclick="GS.deleteMember('${m.id}')">Del</button>
+    </div></td></tr>`;
+  }).join('');
+ },
+ filterMembers(){
+  const q=document.getElementById('msrch').value.toLowerCase();
+  const f=document.getElementById('mfilt').value;
+  let members=this.get('members').filter(m=>m.gid===this.user.gid);
+  if(q)members=members.filter(m=>m.name.toLowerCase().includes(q)||m.phone.includes(q)||m.mid.toLowerCase().includes(q)||m.email.toLowerCase().includes(q));
+  if(f)members=members.filter(m=>m.status===f);
+  document.getElementById('memberTbl').innerHTML=this.renderMemberRows(members);
+ },
+ viewMember(id){this.viewingMember=id;this.go('member-view')},
+ rMemberView(){
+  const m=this.get('members').find(x=>x.id===this.viewingMember);
+  if(!m){this.go('members');return;}
+  const txs=this.get('transactions').filter(t=>t.mid===m.id);
+  const att=this.get('attendance').filter(a=>a.mid===m.id);
+  const dl=this.daysLeft(m.end);
+  const pct=Math.max(0,Math.min(100,Math.round(dl/30*100)));
+  document.getElementById('main').innerHTML=`
+   <div class="ph"><button class="btn bg bsm" onclick="GS.go('members')">← Back</button></div>
+   <div class="dh">
+    <div class="dav">${m.name[0]}</div>
+    <div><h2 style="font-size:20px;font-weight:800">${m.name}</h2>
+     <div class="tsm tmu" style="margin-top:2px">${m.email} · ${m.phone}</div>
+     <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><span class="b bg-ac">${m.mid}</span>${this.statusBadge(m.status)}<span class="b bg-mu">${this.planName(m.plan)}</span></div>
+    </div>
+   </div>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">
+    <div class="card cb">
+     <h3 style="font-size:12px;font-weight:700;margin-bottom:14px;color:var(--mu)">PERSONAL INFO</h3>
+     <div class="ir"><span class="irl">Full Name</span><span class="irv">${m.name}</span></div>
+     <div class="ir"><span class="irl">Age</span><span class="irv">${m.age||'—'}</span></div>
+     <div class="ir"><span class="irl">Gender</span><span class="irv">${m.gender||'—'}</span></div>
+     <div class="ir"><span class="irl">Phone</span><span class="irv">${m.phone}</span></div>
+     <div class="ir"><span class="irl">Address</span><span class="irv">${m.addr||'—'}</span></div>
+    </div>
+    <div class="card cb">
+     <h3 style="font-size:12px;font-weight:700;margin-bottom:14px;color:var(--mu)">MEMBERSHIP</h3>
+     <div class="ir"><span class="irl">Plan</span><span class="irv tac">${this.planName(m.plan)}</span></div>
+     <div class="ir"><span class="irl">Start Date</span><span class="irv">${m.start}</span></div>
+     <div class="ir"><span class="irl">Expiry Date</span><span class="irv">${m.end}</span></div>
+     <div class="ir"><span class="irl">Days Left</span><span class="irv ${dl<0?'':'tac'}">${dl>0?dl+' days':'Expired'}</span></div>
+     <div class="pb" style="margin-top:10px"><div class="pf" style="width:${pct}%;background:${dl<7?'var(--dg)':dl<30?'var(--wn)':'var(--ac)'}"></div></div>
+    </div>
+   </div>
+   <div class="card mb20">
+    <div class="ch"><h3>Payment History</h3></div>
+    <div class="tw"><table><thead><tr><th>REF</th><th>AMOUNT</th><th>METHOD</th><th>DATE</th><th>STATUS</th></tr></thead>
+    <tbody>${txs.length?txs.map(t=>`<tr><td class="tsm tmu">${t.ref}</td><td>${this.fmt(t.amount)}</td><td>${t.method}</td><td>${t.date}</td><td>${this.statusBadge(t.status)}</td></tr>`).join(''):'<tr><td colspan="5"><div class="es"><p>No transactions</p></div></td></tr>'}</tbody></table></div>
+   </div>
+   <div class="card">
+    <div class="ch"><h3>Recent Attendance</h3></div>
+    <div class="tw"><table><thead><tr><th>DATE</th><th>TIME</th></tr></thead>
+    <tbody>${att.slice(0,10).map(a=>`<tr><td>${a.date}</td><td>${a.time}</td></tr>`).join('')||'<tr><td colspan="2"><div class="es"><p>No attendance records</p></div></td></tr>'}</tbody></table></div>
+   </div>`;
+ },
+ deleteMember(id){
+  const m=this.get('members').find(x=>x.id===id);if(!m)return;
+  this.confirmModal('Delete Member',`<strong>${m.name}</strong> (${m.mid}) ko delete karna chahte ho? Ye undo nahi hoga.`,()=>{
+   this.set('members',this.get('members').filter(x=>x.id!==id));
+   this.set('users',this.get('users').filter(u=>u.id!==m.uid));
+   this.rMembers();
+  });
+ },
+ addMemberModal(){
+  const plans=this.get('plans').filter(p=>p.gid===this.user.gid);
+  this.showModal('Add New Member',`
+   <div class="row-2"><div class="f"><label>FULL NAME*</label><input id="mn" placeholder="Full Name"></div><div class="f"><label>PHONE*</label><input id="mph" placeholder="Mobile Number"></div></div>
+   <div class="row-2"><div class="f"><label>EMAIL*</label><input id="me" type="email" placeholder="email@example.com"></div><div class="f"><label>AGE</label><input id="ma" type="number" placeholder="Age"></div></div>
+   <div class="row-2"><div class="f"><label>GENDER</label><select id="mg"><option>Male</option><option>Female</option><option>Other</option></select></div><div class="f"><label>MEMBERSHIP PLAN*</label><select id="mpl">${plans.map(p=>`<option value="${p.id}">${p.name} – ${this.fmt(p.price)}/mo</option>`).join('')}</select></div></div>
+   <div class="f"><label>ADDRESS</label><input id="mad" placeholder="Full address"></div>`,
+  ()=>{
+   const name=document.getElementById('mn').value.trim();
+   const phone=document.getElementById('mph').value.trim();
+   const email=document.getElementById('me').value.trim().toLowerCase();
+   const planId=document.getElementById('mpl').value;
+   if(!name||!phone||!email){this.toast('Naam, phone aur email zaroori hain','dg');return;}
+   const users=this.get('users');
+   if(users.find(u=>u.email===email)){this.toast('Ye email pehle se registered hai','dg');return;}
+   const plan=this.get('plans').find(p=>p.id===planId);
+   if(!plan){this.toast('Plan select karo','dg');return;}
+   const start=new Date().toISOString().split('T')[0];
+   const end=new Date(Date.now()+plan.months*30*86400000).toISOString().split('T')[0];
+   const members=this.get('members');
+   // Smart ID: always higher than existing max — no gaps even after deletes
+   const maxNum=members.reduce((mx,m)=>{const n=parseInt((m.mid||'').replace(/\D/g,''))||1000;return Math.max(mx,n);},1000);
+   const newMid='GS-'+String(maxNum+1);
+   const newUid=this.uid();
+   const defPw=phone; // default password = phone number
+   const newM={id:this.uid(),uid:newUid,gid:this.user.gid,name,email,phone,age:document.getElementById('ma').value||0,gender:document.getElementById('mg').value,plan:planId,start,end,status:'active',mid:newMid,addr:document.getElementById('mad').value};
+   members.push(newM);this.set('members',members);
+   // Create login account for member
+   users.push({id:newUid,email,pw:defPw,role:'member',name,gid:this.user.gid,phone});
+   this.set('users',users);
+   this.closeModal();
+   // Show credentials to admin
+   this.showModal('✅ Member Added Successfully',`
+    <div class="alert alert-ok" style="margin-bottom:16px">Member successfully register ho gaya!</div>
+    <div class="card cb" style="margin-bottom:16px;border-color:rgba(200,255,0,.3)">
+     <div style="font-size:11px;font-weight:700;color:var(--mu);margin-bottom:12px">MEMBER DETAILS</div>
+     <div class="ir"><span class="irl">Name</span><span class="irv">${name}</span></div>
+     <div class="ir"><span class="irl">Member ID</span><span class="irv tac" style="font-size:16px;font-weight:900">${newMid}</span></div>
+     <div class="ir"><span class="irl">Plan</span><span class="irv">${plan.name}</span></div>
+     <div class="ir"><span class="irl">Valid Until</span><span class="irv">${end}</span></div>
+    </div>
+    <div class="card cb" style="border-color:rgba(255,184,0,.3)">
+     <div style="font-size:11px;font-weight:700;color:var(--wn);margin-bottom:8px">🔑 LOGIN CREDENTIALS — MEMBER KO BATAO</div>
+     <div class="ir"><span class="irl">App Login Email</span><span class="irv">${email}</span></div>
+     <div class="ir" style="border-bottom:none"><span class="irl">Default Password</span><span class="irv tac" style="font-size:15px;font-weight:800">${defPw}</span></div>
+     <div class="tsm tmu" style="margin-top:8px">Default password = phone number. Member pehli baar login karke badal sakta hai.</div>
+    </div>`,
+   ()=>{this.closeModal();this.rMembers();},'Close & View Members');
+  },'Add Member');
+ },
+ editMemberModal(id){
+  const m=this.get('members').find(x=>x.id===id);
+  if(!m)return;
+  const plans=this.get('plans').filter(p=>p.gid===this.user.gid);
+  this.showModal('Edit Member',`
+   <div class="row-2"><div class="f"><label>FULL NAME</label><input id="mn" value="${m.name}"></div><div class="f"><label>PHONE</label><input id="mph" value="${m.phone}"></div></div>
+   <div class="row-2"><div class="f"><label>EMAIL</label><input id="me" value="${m.email}"></div><div class="f"><label>AGE</label><input id="ma" value="${m.age||''}"></div></div>
+   <div class="row-2"><div class="f"><label>GENDER</label><select id="mg">${['Male','Female','Other'].map(g=>`<option${g===m.gender?' selected':''}>${g}</option>`).join('')}</select></div><div class="f"><label>PLAN</label><select id="mpl">${plans.map(p=>`<option value="${p.id}"${p.id===m.plan?' selected':''}>${p.name}</option>`).join('')}</select></div></div>
+   <div class="f"><label>STATUS</label><select id="mst"><option value="active"${m.status==='active'?' selected':''}>Active</option><option value="expired"${m.status==='expired'?' selected':''}>Expired</option><option value="expiring"${m.status==='expiring'?' selected':''}>Expiring Soon</option></select></div>
+   <div class="f"><label>EXPIRY DATE</label><input id="mend" type="date" value="${m.end}"></div>
+   <div class="f"><label>ADDRESS</label><input id="mad" value="${m.addr||''}"></div>`,
+  ()=>{
+   const members=this.get('members');
+   const idx=members.findIndex(x=>x.id===id);
+   if(idx<0)return;
+   members[idx]={...members[idx],name:document.getElementById('mn').value,phone:document.getElementById('mph').value,email:document.getElementById('me').value,age:document.getElementById('ma').value,gender:document.getElementById('mg').value,plan:document.getElementById('mpl').value,status:document.getElementById('mst').value,end:document.getElementById('mend').value,addr:document.getElementById('mad').value};
+   this.set('members',members);this.closeModal();this.rMembers();
+  },'Save Changes');
+ },
+
+ rPlans(){
+  const plans=this.get('plans').filter(p=>p.gid===this.user.gid);
+  document.getElementById('main').innerHTML=`
+   <div class="ph"><h1>Membership Plans</h1><p>Configure gym membership packages</p></div>
+   <div class="tb"><button class="btn bp" onclick="GS.addPlanModal()">+ New Plan</button></div>
+   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px">
+   ${plans.map(p=>`
+    <div class="card"><div class="cb">
+     <div class="fbet mb16"><h3 style="font-size:16px;font-weight:800">${p.name}</h3>${this.statusBadge('active')}</div>
+     <div class="rbig" style="font-size:28px">${this.fmt(p.price)}</div>
+     <div class="tsm tmu" style="margin-bottom:12px">per ${p.months===1?'month':p.months+' months'}</div>
+     <div class="tsm" style="margin-bottom:10px">${p.desc||''}</div>
+     <div class="tsm tmu">${p.benefits||''}</div>
+     <div style="margin-top:16px;display:flex;gap:8px">
+      <button class="btn bg bsm" onclick="GS.editPlan('${p.id}')">Edit</button>
+      <button class="btn bd bsm" onclick="GS.deletePlan('${p.id}')">Delete</button>
+     </div>
+    </div></div>`).join('')}
+   </div>`;
+ },
+ addPlanModal(){
+  this.showModal('New Membership Plan',`
+   <div class="row-2"><div class="f"><label>PLAN NAME*</label><input id="pln" placeholder="e.g. Monthly"></div><div class="f"><label>DURATION (MONTHS)*</label><input id="plm" type="number" min="1" placeholder="1"></div></div>
+   <div class="f"><label>PRICE (₹)*</label><input id="plp" type="number" placeholder="999"></div>
+   <div class="f"><label>DESCRIPTION</label><input id="pld" placeholder="Short description"></div>
+   <div class="f"><label>BENEFITS</label><textarea id="plb" placeholder="List benefits..."></textarea></div>`,
+  ()=>{
+   const name=document.getElementById('pln').value.trim();
+   const months=parseInt(document.getElementById('plm').value)||1;
+   const price=parseInt(document.getElementById('plp').value)||0;
+   if(!name||!price){this.toast('Name aur price zaroori hain','dg');return;}
+   const plans=this.get('plans');
+   plans.push({id:this.uid(),gid:this.user.gid,name,months,price,desc:document.getElementById('pld').value,benefits:document.getElementById('plb').value});
+   this.set('plans',plans);this.closeModal();this.rPlans();
+  },'Create Plan');
+ },
+ editPlan(id){
+  const p=this.get('plans').find(x=>x.id===id);
+  if(!p)return;
+  this.showModal('Edit Plan',`
+   <div class="row-2"><div class="f"><label>PLAN NAME</label><input id="pln" value="${p.name}"></div><div class="f"><label>DURATION (MONTHS)</label><input id="plm" type="number" value="${p.months}"></div></div>
+   <div class="f"><label>PRICE (₹)</label><input id="plp" type="number" value="${p.price}"></div>
+   <div class="f"><label>DESCRIPTION</label><input id="pld" value="${p.desc||''}"></div>
+   <div class="f"><label>BENEFITS</label><textarea id="plb">${p.benefits||''}</textarea></div>`,
+  ()=>{
+   const plans=this.get('plans');const idx=plans.findIndex(x=>x.id===id);
+   plans[idx]={...plans[idx],name:document.getElementById('pln').value,months:parseInt(document.getElementById('plm').value)||1,price:parseInt(document.getElementById('plp').value)||0,desc:document.getElementById('pld').value,benefits:document.getElementById('plb').value};
+   this.set('plans',plans);this.closeModal();this.rPlans();
+  },'Save');
+ },
+ deletePlan(id){
+  const p=this.get('plans').find(x=>x.id===id);if(!p)return;
+  this.confirmModal('Delete Plan',`<strong>${p.name}</strong> plan delete karo? Is plan ke existing members affect nahi honge.`,()=>{
+   this.set('plans',this.get('plans').filter(x=>x.id!==id));this.rPlans();
+  });
+ },
+
+ rQR(){
+  document.getElementById('main').innerHTML=`
+   <div class="ph"><h1>QR Scanner</h1><p>Scan member QR codes for quick check-in</p></div>
+   <div class="scanner-box">
+    <div style="font-size:48px;margin-bottom:14px">📷</div>
+    <h3 style="margin-bottom:8px">Member QR Scanner</h3>
+    <p class="tsm tmu" style="margin-bottom:20px">Use the camera to scan a member's QR code for instant identification and check-in</p>
+    <button class="btn bp" onclick="GS.startScan()" style="margin-bottom:12px">Start Camera Scan</button>
+    <div style="color:var(--mu);font-size:11px;margin-bottom:16px">— or enter manually —</div>
+    <div class="f" style="max-width:280px;margin:0 auto 14px"><input id="scanInput" placeholder="Enter Member ID (e.g. GS-1001)" onkeydown="if(event.key==='Enter')GS.manualScan()"></div>
+    <button class="btn bg" onclick="GS.manualScan()">Look Up Member</button>
+   </div>
+   <div id="scanResult"></div>`;
+ },
+ manualScan(){
+  const v=document.getElementById('scanInput').value.trim().toUpperCase();
+  const m=this.get('members').find(x=>x.mid===v||x.mid.toUpperCase()===v);
+  const r=document.getElementById('scanResult');
+  if(!m){r.innerHTML=`<div class="scan-result" style="border-color:var(--dg)"><div class="alert alert-dg">❌ Member not found for ID: ${v}</div></div>`;return;}
+  const dl=this.daysLeft(m.end);
+  const att=this.get('attendance');
+  const today=new Date().toISOString().split('T')[0];
+  const alreadyIn=att.some(a=>a.mid===m.id&&a.date===today);
+  if(!alreadyIn){
+   att.push({id:this.uid(),gid:this.user.gid,mid:m.id,mname:m.name,date:today,time:new Date().toTimeString().slice(0,5)});
+   this.set('attendance',att);
+  }
+  r.innerHTML=`<div class="scan-result">
+   <div class="fbet mb16"><div class="flex gap" style="align-items:center"><div class="mav" style="width:44px;height:44px;font-size:18px">${m.name[0]}</div><div><div style="font-weight:800;font-size:16px">${m.name}</div><div class="tsm tmu">${m.mid}</div></div></div>${this.statusBadge(m.status)}</div>
+   <div class="ir"><span class="irl">Plan</span><span class="irv">${this.planName(m.plan)}</span></div>
+   <div class="ir"><span class="irl">Expiry</span><span class="irv">${m.end}</span></div>
+   <div class="ir"><span class="irl">Days Remaining</span><span class="irv ${dl<7?'tmu':''}">${dl>0?dl+' days':'Expired'}</span></div>
+   <div class="ir" style="border-bottom:none"><span class="irl">Check-in</span><span class="irv" style="color:var(--ok)">${alreadyIn?'Already checked in today':'✅ Checked in now'}</span></div>
+  </div>`;
+ },
+ startScan(){this.toast('Camera scan available in full app. Manual ID use karo abhi.','wn');},
+
+ rAttendance(){
+  const att=this.get('attendance').filter(a=>a.gid===this.user.gid).sort((a,b)=>b.date.localeCompare(a.date));
+  const today=new Date().toISOString().split('T')[0];
+  const todayAtt=att.filter(a=>a.date===today);
+  document.getElementById('main').innerHTML=`
+   <div class="ph"><h1>Attendance</h1><p>Member check-in records</p></div>
+   <div class="sg" style="grid-template-columns:repeat(3,1fr)">
+    <div class="sc g"><div class="sl">TODAY'S CHECK-INS</div><div class="sv">${todayAtt.length}</div></div>
+    <div class="sc a"><div class="sl">THIS WEEK</div><div class="sv">${att.filter(a=>{const d=new Date(a.date);return(new Date()-d)<7*86400000}).length}</div></div>
+    <div class="sc"><div class="sl">TOTAL RECORDS</div><div class="sv">${att.length}</div></div>
+   </div>
+   <div class="card">
+    <div class="ch"><h3>Attendance Log</h3></div>
+    <div class="tw"><table><thead><tr><th>MEMBER</th><th>DATE</th><th>TIME</th></tr></thead>
+    <tbody>${att.map(a=>`<tr><td><b>${a.mname}</b></td><td>${a.date}</td><td>${a.time}</td></tr>`).join('')||'<tr><td colspan="3"><div class="es"><p>No records</p></div></td></tr>'}</tbody></table></div>
+   </div>`;
+ },
+
+ rFees(){
+  const members=this.get('members').filter(m=>m.gid===this.user.gid);
+  const plans=this.get('plans').filter(p=>p.gid===this.user.gid);
+  const exp=members.filter(m=>m.status==='expired'||m.status==='expiring');
+  document.getElementById('main').innerHTML=`
+   <div class="ph"><h1>Fee Management</h1><p>Track and record membership payments</p></div>
+   <div class="sg" style="grid-template-columns:repeat(3,1fr)">
+    <div class="sc d"><div class="sl">EXPIRED / EXPIRING</div><div class="sv">${exp.length}</div></div>
+    <div class="sc w"><div class="sl">REQUIRE RENEWAL</div><div class="sv">${members.filter(m=>m.status==='expired').length}</div></div>
+    <div class="sc g"><div class="sl">ACTIVE</div><div class="sv">${members.filter(m=>m.status==='active').length}</div></div>
+   </div>
+   <div class="card">
+    <div class="ch"><h3>Pending / Expiring Memberships</h3></div>
+    <div class="tw"><table><thead><tr><th>MEMBER</th><th>PLAN</th><th>EXPIRY</th><th>STATUS</th><th>ACTION</th></tr></thead>
+    <tbody>${exp.map(m=>`
+     <tr><td><div class="flex gap" style="align-items:center"><div class="mav">${m.name[0]}</div><div><div style="font-weight:600">${m.name}</div><div class="tsm tmu">${m.phone}</div></div></div></td>
+     <td>${this.planName(m.plan)}</td><td>${m.end}</td><td>${this.statusBadge(m.status)}</td>
+     <td><button class="btn bp bsm" onclick="GS.recordPayment('${m.id}')">Record Payment</button></td></tr>`).join('')||'<tr><td colspan="5"><div class="es">✅<p>No pending payments</p></div></td></tr>'}</tbody></table></div>
+   </div>`;
+ },
+ recordPayment(mid){
+  const m=this.get('members').find(x=>x.id===mid);
+  if(!m)return;
+  const plans=this.get('plans').filter(p=>p.gid===this.user.gid);
+  const plan=plans.find(p=>p.id===m.plan)||plans[0];
+  this.showModal('Record Payment',`
+   <div class="alert alert-ok">Recording payment for <strong>${m.name}</strong></div>
+   <div class="f"><label>PLAN</label><select id="rplan">${plans.map(p=>`<option value="${p.id}"${p.id===m.plan?' selected':''}>${p.name} – ${this.fmt(p.price)}</option>`).join('')}</select></div>
+   <div class="f"><label>PAYMENT METHOD</label><select id="rmethod"><option>Cash</option><option>UPI</option><option>Card</option><option>Net Banking</option></select></div>
+   <div class="f"><label>AMOUNT (₹)</label><input id="ramt" type="number" value="${plan.price}"></div>
+   <div class="f"><label>REFERENCE / NOTE</label><input id="rref" placeholder="Optional reference"></div>`,
+  ()=>{
+   const selPlan=this.get('plans').find(p=>p.id===document.getElementById('rplan').value)||plan;
+   const amt=parseInt(document.getElementById('ramt').value)||selPlan.price;
+   const today=new Date().toISOString().split('T')[0];
+   const newEnd=new Date(Date.now()+selPlan.months*30*86400000).toISOString().split('T')[0];
+   // Update member
+   const members=this.get('members');const idx=members.findIndex(x=>x.id===mid);
+   if(idx>=0){members[idx]={...members[idx],plan:selPlan.id,start:today,end:newEnd,status:'active'};this.set('members',members);}
+   // Add transaction
+   const txs=this.get('transactions');
+   txs.unshift({id:this.uid(),gid:this.user.gid,mid,mname:m.name,amount:amt,date:today,method:document.getElementById('rmethod').value,plan:selPlan.name,status:'paid',ref:'TXN'+Math.floor(Math.random()*900000+100000)});
+   this.set('transactions',txs);
+   this.closeModal();this.rFees();
+  },'Confirm Payment');
+ },
+
+ rTransactions(){
+  const txs=this.get('transactions').filter(t=>t.gid===this.user.gid);
+  const total=txs.filter(t=>t.status==='paid').reduce((s,t)=>s+t.amount,0);
+  document.getElementById('main').innerHTML=`
+   <div class="ph"><h1>Transactions</h1><p>All payment records</p></div>
+   <div class="sg" style="grid-template-columns:repeat(3,1fr)">
+    <div class="sc a"><div class="sl">TOTAL COLLECTED</div><div class="sv" style="font-size:20px">${this.fmt(total)}</div></div>
+    <div class="sc g"><div class="sl">PAID TRANSACTIONS</div><div class="sv">${txs.filter(t=>t.status==='paid').length}</div></div>
+    <div class="sc"><div class="sl">TOTAL TRANSACTIONS</div><div class="sv">${txs.length}</div></div>
+   </div>
+   <div class="tb">
+    <div class="sb"><span>🔍</span><input id="tsrch" placeholder="Search by member, ref…" oninput="GS.filterTxs()"></div>
+    <select class="btn bg" id="tmeth" onchange="GS.filterTxs()"><option value="">All Methods</option><option>Cash</option><option>UPI</option><option>Card</option><option>Net Banking</option></select>
+   </div>
+   <div class="card"><div class="tw"><table><thead><tr><th>REF</th><th>MEMBER</th><th>PLAN</th><th>AMOUNT</th><th>METHOD</th><th>DATE</th><th>STATUS</th></tr></thead>
+   <tbody id="txTbl">${this.renderTxRows(txs)}</tbody></table></div></div>`;
+ },
+ renderTxRows(txs){
+  if(!txs.length)return`<tr><td colspan="7"><div class="es">💳<p>No transactions found</p></div></td></tr>`;
+  return txs.map(t=>`<tr><td class="tsm tmu">${t.ref}</td><td><b>${t.mname}</b></td><td>${t.plan}</td><td style="font-weight:700">${this.fmt(t.amount)}</td><td>${t.method}</td><td>${t.date}</td><td>${this.statusBadge(t.status)}</td></tr>`).join('');
+ },
+ filterTxs(){
+  const q=document.getElementById('tsrch').value.toLowerCase();
+  const m=document.getElementById('tmeth').value;
+  let txs=this.get('transactions').filter(t=>t.gid===this.user.gid);
+  if(q)txs=txs.filter(t=>t.mname.toLowerCase().includes(q)||t.ref.toLowerCase().includes(q));
+  if(m)txs=txs.filter(t=>t.method===m);
+  document.getElementById('txTbl').innerHTML=this.renderTxRows(txs);
+ },
+
+ rInventory(){
+  const products=this.get('products').filter(p=>p.gid===this.user.gid);
+  const lowStock=products.filter(p=>p.stock>0&&p.stock<10);
+  const outStock=products.filter(p=>p.stock===0);
+  document.getElementById('main').innerHTML=`
+   <div class="ph"><h1>Inventory / Stock</h1><p>Manage product stock levels</p></div>
+   <div class="sg" style="grid-template-columns:repeat(4,1fr)">
+    <div class="sc a"><div class="sl">TOTAL PRODUCTS</div><div class="sv">${products.length}</div></div>
+    <div class="sc w"><div class="sl">LOW STOCK</div><div class="sv">${lowStock.length}</div></div>
+    <div class="sc d"><div class="sl">OUT OF STOCK</div><div class="sv">${outStock.length}</div></div>
+    <div class="sc g"><div class="sl">IN STOCK</div><div class="sv">${products.filter(p=>p.stock>0).length}</div></div>
+   </div>
+   <div class="tb"><button class="btn bp" onclick="GS.addProductModal()">+ Add Product</button></div>
+   <div class="card"><div class="tw"><table><thead><tr><th>PRODUCT</th><th>BRAND</th><th>CATEGORY</th><th>PRICE</th><th>STOCK</th><th>STATUS</th><th>ACTIONS</th></tr></thead>
+   <tbody>${products.map(p=>`
+    <tr><td><div class="flex gap" style="align-items:center"><span style="font-size:22px">${p.emoji||'📦'}</span><b>${p.name}</b></div></td>
+    <td class="tmu tsm">${p.brand}</td><td>${p.cat}</td><td>${this.fmt(p.price)}</td>
+    <td><span style="color:${p.stock===0?'var(--dg)':p.stock<10?'var(--wn)':'var(--ok)'};font-weight:700">${p.stock}</span></td>
+    <td>${p.stock===0?'<span class="b bg-dg">Out of Stock</span>':p.stock<10?'<span class="b bg-wn">Low Stock</span>':'<span class="b bg-ok">In Stock</span>'}</td>
+    <td><div class="flex gap">
+     <button class="btn bg bsm" onclick="GS.updateStock('${p.id}')">Stock</button>
+     <button class="btn bg bsm" onclick="GS.editProduct('${p.id}')">Edit</button>
+     <button class="btn bd bsm" onclick="GS.deleteProduct('${p.id}')">Del</button>
+    </div></td></tr>`).join('')}</tbody></table></div></div>`;
+ },
+ addProductModal(){
+  this.showModal('Add Product',`
+   <div class="row-2"><div class="f"><label>PRODUCT NAME*</label><input id="prn" placeholder="Product name"></div><div class="f"><label>BRAND*</label><input id="prb" placeholder="Brand"></div></div>
+   <div class="row-2"><div class="f"><label>CATEGORY</label><select id="prc"><option>Whey Protein</option><option>Creatine</option><option>Mass Gainer</option><option>Pre-Workout</option><option>Protein Bars</option><option>Amino Acids</option><option>Supplements</option></select></div><div class="f"><label>EMOJI ICON</label><input id="pre" placeholder="🥛" value="📦"></div></div>
+   <div class="row-2"><div class="f"><label>PRICE (₹)*</label><input id="prp" type="number" placeholder="999"></div><div class="f"><label>STOCK QTY*</label><input id="prs" type="number" placeholder="10"></div></div>
+   <div class="f"><label>DESCRIPTION</label><textarea id="prd" placeholder="Product description"></textarea></div>`,
+  ()=>{
+   const name=document.getElementById('prn').value.trim();
+   const price=parseInt(document.getElementById('prp').value)||0;
+   if(!name||!price){this.toast('Name aur price zaroori hain','dg');return;}
+   const products=this.get('products');
+   products.push({id:this.uid(),gid:this.user.gid,name,brand:document.getElementById('prb').value,cat:document.getElementById('prc').value,emoji:document.getElementById('pre').value||'📦',price,stock:parseInt(document.getElementById('prs').value)||0,desc:document.getElementById('prd').value});
+   this.set('products',products);this.closeModal();this.rInventory();
+  },'Add Product');
+ },
+ editProduct(id){
+  const p=this.get('products').find(x=>x.id===id);if(!p)return;
+  this.showModal('Edit Product',`
+   <div class="row-2"><div class="f"><label>PRODUCT NAME</label><input id="prn" value="${p.name}"></div><div class="f"><label>BRAND</label><input id="prb" value="${p.brand}"></div></div>
+   <div class="row-2"><div class="f"><label>PRICE (₹)</label><input id="prp" type="number" value="${p.price}"></div><div class="f"><label>EMOJI</label><input id="pre" value="${p.emoji||'📦'}"></div></div>
+   <div class="f"><label>DESCRIPTION</label><textarea id="prd">${p.desc||''}</textarea></div>`,
+  ()=>{
+   const products=this.get('products');const idx=products.findIndex(x=>x.id===id);
+   products[idx]={...products[idx],name:document.getElementById('prn').value,brand:document.getElementById('prb').value,price:parseInt(document.getElementById('prp').value)||products[idx].price,emoji:document.getElementById('pre').value,desc:document.getElementById('prd').value};
+   this.set('products',products);this.closeModal();this.rInventory();
+  },'Save');
+ },
+ updateStock(id){
+  const p=this.get('products').find(x=>x.id===id);if(!p)return;
+  this.showModal('Update Stock — '+p.name,`
+   <div style="text-align:center;background:var(--sf);border-radius:10px;padding:16px;margin-bottom:16px">
+    <div style="font-size:40px;font-weight:900;color:var(--ac);letter-spacing:-2px">${p.stock}</div>
+    <div class="tsm tmu">current stock (units)</div>
+   </div>
+   <div class="f"><label>NEW STOCK QUANTITY (direct set)</label><input id="snew" type="number" min="0" placeholder="e.g. 25" autofocus></div>
+   <div style="text-align:center;color:var(--mu);font-size:11px;margin:-6px 0 12px">— ya fir add/remove karo —</div>
+   <div class="f"><label>ADD / REMOVE UNITS (+ ya - enter karo)</label><input id="sadd" type="number" placeholder="e.g. +10 ya -5"></div>`,
+  ()=>{
+   const newRaw=document.getElementById('snew').value.trim();
+   const addRaw=document.getElementById('sadd').value.trim();
+   let finalStock=p.stock;
+   if(newRaw!==''){finalStock=Math.max(0,parseInt(newRaw)||0);}
+   else if(addRaw!==''){finalStock=Math.max(0,p.stock+(parseInt(addRaw)||0));}
+   else{this.toast('Koi value enter karo','dg');return;}
+   const products=this.get('products');
+   const idx=products.findIndex(x=>x.id===id);
+   if(idx<0){this.closeModal();return;}
+   products[idx]=Object.assign({},products[idx],{stock:finalStock});
+   this.set('products',products);
+   this.closeModal();
+   this.rInventory();
+  },'Update Stock');
+ },
+ deleteProduct(id){
+  const p=this.get('products').find(x=>x.id===id);if(!p)return;
+  this.confirmModal('Delete Product',`<strong>${p.name}</strong> ko inventory se hata do? Ye undo nahi hoga.`,()=>{
+   this.set('products',this.get('products').filter(x=>x.id!==id));this.rInventory();
+  });
+ },
+
+ rStoreMgmt(){
+  const products=this.get('products').filter(p=>p.gid===this.user.gid);
+  document.getElementById('main').innerHTML=`
+   <div class="ph"><h1>Supplement Store</h1><p>Manage what members can buy</p></div>
+   <div class="pg">${products.map(p=>`
+    <div class="pc">
+     <div class="pi">${p.emoji||'📦'}</div>
+     <div class="pif">
+      <div class="pn">${p.name}</div>
+      <div class="pbr">${p.brand} · ${p.cat}</div>
+      <div class="fbet">
+       <span class="ppr">${this.fmt(p.price)}</span>
+       <span class="pst">${p.stock} in stock</span>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:6px">
+       <button class="btn bg bsm" onclick="GS.editProduct('${p.id}')">Edit</button>
+       <button class="btn bg bsm" onclick="GS.updateStock('${p.id}')">Stock</button>
+      </div>
+     </div>
+    </div>`).join('')}
+    <div class="pc" style="display:flex;align-items:center;justify-content:center;min-height:200px;cursor:pointer;border:2px dashed var(--bd)" onclick="GS.addProductModal()">
+     <div style="text-align:center;color:var(--mu)"><div style="font-size:32px">+</div><div class="tsm">Add Product</div></div>
+    </div>
+   </div>`;
+ },
+
+ rOrders(){
+  const orders=this.get('orders').filter(o=>o.gid===this.user.gid).sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('main').innerHTML=`
+   <div class="ph"><h1>Orders</h1><p>Supplement purchase orders from members</p></div>
+   <div class="sg" style="grid-template-columns:repeat(4,1fr)">
+    <div class="sc a"><div class="sl">TOTAL ORDERS</div><div class="sv">${orders.length}</div></div>
+    <div class="sc w"><div class="sl">PENDING</div><div class="sv">${orders.filter(o=>o.status==='pending').length}</div></div>
+    <div class="sc g"><div class="sl">DELIVERED</div><div class="sv">${orders.filter(o=>o.status==='delivered').length}</div></div>
+    <div class="sc a"><div class="sl">TOTAL SALES</div><div class="sv" style="font-size:18px">${this.fmt(orders.reduce((s,o)=>s+o.total,0))}</div></div>
+   </div>
+   <div class="card"><div class="tw"><table><thead><tr><th>ORDER ID</th><th>MEMBER</th><th>ITEMS</th><th>TOTAL</th><th>DATE</th><th>STATUS</th><th>ACTIONS</th></tr></thead>
+   <tbody>${orders.map(o=>`
+    <tr><td class="tsm tmu">#${o.id.slice(-6).toUpperCase()}</td>
+    <td><b>${o.mname}</b></td>
+    <td class="tsm">${o.items.map(i=>`${i.name} ×${i.qty}`).join(', ')}</td>
+    <td style="font-weight:700">${this.fmt(o.total)}</td>
+    <td>${o.date}</td><td>${this.statusBadge(o.status)}</td>
+    <td><select class="btn bg bsm" onchange="GS.updateOrderStatus('${o.id}',this.value)" style="padding:5px 8px">
+     <option value="">Update</option>
+     <option value="pending"${o.status==='pending'?' selected':''}>Pending</option>
+     <option value="processing"${o.status==='processing'?' selected':''}>Processing</option>
+     <option value="delivered"${o.status==='delivered'?' selected':''}>Delivered</option>
+     <option value="cancelled"${o.status==='cancelled'?' selected':''}>Cancelled</option>
+    </select></td></tr>`).join('')||'<tr><td colspan="7"><div class="es">📦<p>No orders yet</p></div></td></tr>'}</tbody></table></div></div>`;
+ },
+ updateOrderStatus(id,status){
+  if(!status)return;
+  const orders=this.get('orders');const idx=orders.findIndex(o=>o.id===id);
+  if(idx>=0){orders[idx].status=status;this.set('orders',orders);this.rOrders();}
+ },
+
+ rReports(){
+  const members=this.get('members').filter(m=>m.gid===this.user.gid);
+  const txs=this.get('transactions').filter(t=>t.gid===this.user.gid&&t.status==='paid');
+  const orders=this.get('orders').filter(o=>o.gid===this.user.gid);
+  // Apply same overrides as Dashboard for consistency
+  const ov=this.getDashOv();
+  const ovOn=Object.keys(ov).length>0;
+  const realRev=txs.reduce((s,t)=>s+t.amount,0);
+  const realActive=members.filter(m=>m.status==='active').length;
+  const dTotal=ov.total!==undefined?ov.total:members.length;
+  const dActive=ov.active!==undefined?ov.active:realActive;
+  const dRev=ov.totalRev!==undefined?ov.totalRev:realRev;
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const now=new Date();
+  const revByMonth=Array(6).fill(0);
+  txs.forEach(t=>{
+   const td=new Date(t.date);const diff=(now.getMonth()-td.getMonth()+12)%12;
+   if(diff<6)revByMonth[5-diff]+=t.amount;
+  });
+  // If total revenue overridden, adjust latest month in chart
+  if(ov.totalRev!==undefined&&ov.totalRev!==realRev){
+   const diff=ov.totalRev-realRev;revByMonth[5]=Math.max(0,revByMonth[5]+diff);
+  }
+  const mLabels=Array(6).fill(0).map((_,i)=>months[(now.getMonth()-5+i+12)%12]);
+  document.getElementById('main').innerHTML=`
+   <div class="ph fbet">
+    <div><h1>Reports & Analytics</h1><p>Business performance overview</p></div>
+    <div style="display:flex;gap:8px;align-items:center">
+     ${ovOn?'<span class="b bg-wn" style="font-size:10px">✏️ Overrides active</span>':''}
+     <button class="btn bg bsm" onclick="GS.editDashboardModal()">✏️ Edit Figures</button>
+     <button class="btn bg bsm" onclick="GS.exportCSV()">⬇️ CSV</button>
+    </div>
+   </div>
+   <div class="sg">
+    <div class="sc a"><div class="sl">TOTAL MEMBERS${ov.total!==undefined?' ✏️':''}</div><div class="sv">${dTotal}</div></div>
+    <div class="sc g"><div class="sl">ACTIVE${ov.active!==undefined?' ✏️':''}</div><div class="sv">${dActive}</div></div>
+    <div class="sc d"><div class="sl">EXPIRED</div><div class="sv">${members.filter(m=>m.status==='expired').length}</div></div>
+    <div class="sc a"><div class="sl">TOTAL REVENUE${ov.totalRev!==undefined?' ✏️':''}</div><div class="sv" style="font-size:18px">${this.fmt(dRev)}</div></div>
+    <div class="sc g"><div class="sl">SUPPLEMENT SALES</div><div class="sv" style="font-size:18px">${this.fmt(orders.reduce((s,o)=>s+o.total,0))}</div></div>
+    <div class="sc w"><div class="sl">TOTAL ORDERS</div><div class="sv">${orders.length}</div></div>
+   </div>
+   <div class="card mb20">
+    <div class="ch"><h3>Revenue Trend (Last 6 Months)</h3></div>
+    <div class="cb"><div class="cw" style="height:220px"><canvas id="repChart"></canvas></div></div>
+   </div>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div class="card"><div class="ch"><h3>Payment Methods</h3></div><div class="cb"><canvas id="methChart" style="height:160px"></canvas></div></div>
+    <div class="card"><div class="ch"><h3>Recent Fee Collections</h3></div>
+     <div class="tw"><table><thead><tr><th>MEMBER</th><th>AMOUNT</th><th>DATE</th></tr></thead>
+     <tbody>${txs.slice(0,5).map(t=>`<tr><td>${t.mname}</td><td>${this.fmt(t.amount)}</td><td>${t.date}</td></tr>`).join('')}</tbody></table></div>
+    </div>
+   </div>`;
+  setTimeout(()=>{
+   const rCtx=document.getElementById('repChart')?.getContext('2d');
+   if(rCtx)this.chartInst.rep=new Chart(rCtx,{type:'bar',data:{labels:mLabels,datasets:[{label:'Revenue',data:revByMonth,backgroundColor:'rgba(200,255,0,.7)',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#252525'},ticks:{color:'#666'}},y:{grid:{color:'#252525'},ticks:{color:'#666',callback:v=>'₹'+v.toLocaleString('en-IN')}}}}});
+   const methods=['Cash','UPI','Card','Net Banking'];
+   const methCounts=methods.map(m=>txs.filter(t=>t.method===m).length);
+   const mCtx=document.getElementById('methChart')?.getContext('2d');
+   if(mCtx)this.chartInst.meth=new Chart(mCtx,{type:'pie',data:{labels:methods,datasets:[{data:methCounts,backgroundColor:['rgba(200,255,0,.8)','rgba(0,230,118,.8)','rgba(255,184,0,.8)','rgba(100,181,246,.8)'],borderColor:'#161616',borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#aaa',padding:10,font:{size:11}}}}}});
+  },50);
+ },
+ exportCSV(){
+  const txs=this.get('transactions').filter(t=>t.gid===this.user.gid);
+  const csv='Ref,Member,Plan,Amount,Method,Date,Status\n'+txs.map(t=>`${t.ref},${t.mname},${t.plan},${t.amount},${t.method},${t.date},${t.status}`).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='gymsync-transactions.csv';a.click();
+ },
+
+ rNotif(){
+  const all=this.get('notifications').filter(n=>n.uid===this.user.id||n.uid===this.user.id);
+  const ownerNotifs=this.get('notifications').filter(n=>n.uid===this.user.id);
+  const unread=ownerNotifs.filter(n=>!n.read).length;
+  document.getElementById('main').innerHTML=`
+   <div class="ph fbet"><div><h1>Notifications</h1><p>${unread} unread</p></div>${unread>0?`<button class="btn bg bsm" onclick="GS.markAllRead()">Mark All Read</button>`:''}</div>
+   <div class="card">${ownerNotifs.length?ownerNotifs.sort((a,b)=>b.date.localeCompare(a.date)).map(n=>`
+    <div class="ni2${n.read?'':' unr'}">
+     ${n.read?'<div style="width:7px;flex-shrink:0"></div>':'<div class="ndot"></div>'}
+     <div style="flex:1">
+      <div style="font-size:13px;font-weight:${n.read?'400':'600'}">${n.msg}</div>
+      <div class="tsm tmu" style="margin-top:3px">${n.date}</div>
+     </div>
+     <span class="b bg-${n.type==='ok'?'ok':n.type==='dg'?'dg':'wn'}">${n.type==='ok'?'Info':n.type==='dg'?'Alert':'Warning'}</span>
+    </div>`).join(''):
+   '<div class="es">🔔<p>No notifications</p></div>'}</div>`;
+ },
+ markAllRead(){
+  const notifs=this.get('notifications');
+  notifs.forEach(n=>{if(n.uid===this.user.id)n.read=true;});
+  this.set('notifications',notifs);this.rNotif();
+ },
+
+ rSettings(){
+  const memberCount=this.get('members').filter(m=>m.gid===this.user.gid).length;
+  const txCount=this.get('transactions').filter(t=>t.gid===this.user.gid).length;
+  const prodCount=this.get('products').filter(p=>p.gid===this.user.gid).length;
+  document.getElementById('main').innerHTML=`
+   <div class="ph"><h1>Settings</h1><p>Gym setup, data management & preferences</p></div>
+
+   <h2 style="font-size:13px;font-weight:700;color:var(--mu);margin-bottom:12px;letter-spacing:.4px">GYM SETUP</h2>
+   <div class="sg2 mb20">
+    <div class="card"><div class="ch"><h3>Gym Information</h3></div><div class="cb">
+     <div class="f"><label>GYM NAME</label><input value="FitLife Gym" id="gname"></div>
+     <div class="f"><label>OWNER NAME</label><input value="${this.user.name}" id="oname"></div>
+     <div class="f"><label>PHONE</label><input value="${this.user.phone||''}" id="ophone"></div>
+     <div class="f"><label>ADDRESS</label><input value="Mumbai, Maharashtra" id="gaddr"></div>
+     <button class="btn bp" onclick="GS.toast('✅ Gym info saved!','ok')">Save</button>
+    </div></div>
+    <div class="card"><div class="ch"><h3>Payment Gateway</h3></div><div class="cb">
+     <div class="alert alert-wn" style="margin-bottom:14px">⚠️ Demo mode. Configure Razorpay for live payments.</div>
+     <div class="f"><label>RAZORPAY KEY ID</label><input placeholder="rzp_live_xxxx…" type="password"></div>
+     <div class="f"><label>RAZORPAY KEY SECRET</label><input placeholder="Enter secret…" type="password"></div>
+     <button class="btn bp" onclick="GS.toast('✅ Gateway config saved!','ok')">Save</button>
+    </div></div>
+   </div>
+
+   <h2 style="font-size:13px;font-weight:700;color:var(--mu);margin-bottom:12px;letter-spacing:.4px">📖 NEW MEMBER KAISE ADD KAREIN</h2>
+   <div class="card mb20"><div class="cb">
+    <div class="tline" style="padding-left:24px">
+     <div class="te"><strong style="color:var(--ac)">Step 1 — Members → "+ Add Member"</strong><div class="tsm tmu" style="margin-top:3px">Naam, phone, email, age, plan bharo</div></div>
+     <div class="te"><strong style="color:var(--ac)">Step 2 — Auto Member ID milta hai</strong><div class="tsm tmu" style="margin-top:3px">System khud GS-1001, GS-1002… generate karta hai. Delete ke baad bhi gap nahi aata.</div></div>
+     <div class="te"><strong style="color:var(--ac)">Step 3 — Login credentials ban jaate hain</strong><div class="tsm tmu" style="margin-top:3px">Member ka email + default password (phone number) automatically create hota hai. Credentials screen pe dikhta hai — member ko bata do.</div></div>
+     <div class="te"><strong style="color:var(--ac)">Step 4 — Member login kare</strong><div class="tsm tmu" style="margin-top:3px">Member apni email + phone number se login kare. Pehle login pe password change kar sakta hai.</div></div>
+     <div class="te" style="margin-bottom:0"><strong style="color:var(--ac)">Step 5 — Baad mein update karein</strong><div class="tsm tmu" style="margin-top:3px">Members list mein kisi bhi member ke saamne "Edit" dabao — naam, plan, expiry, status sab badal sakte ho.</div></div>
+    </div>
+   </div></div>
+
+   <h2 style="font-size:13px;font-weight:700;color:var(--mu);margin-bottom:12px;letter-spacing:.4px">🗑️ DATA MANAGEMENT</h2>
+   <div class="card mb20"><div class="cb">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">
+     <div class="sc d"><div class="sl">MEMBERS</div><div class="sv">${memberCount}</div><div class="sd">registered</div></div>
+     <div class="sc w"><div class="sl">TRANSACTIONS</div><div class="sv">${txCount}</div><div class="sd">recorded</div></div>
+     <div class="sc"><div class="sl">PRODUCTS</div><div class="sv">${prodCount}</div><div class="sd">in store</div></div>
+    </div>
+
+    <div class="card" style="margin-bottom:14px;border-color:rgba(255,184,0,.3)"><div class="cb" style="padding:14px">
+     <div style="font-weight:700;margin-bottom:4px">🟡 Reset Demo Data</div>
+     <div class="tsm tmu" style="margin-bottom:12px">Sirf demo members, transactions, products aur attendance hatao. Plans aur owner account safe rahega. Real data bharni shuru karo.</div>
+     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+      ${['Members ✕','Transactions ✕','Products ✕','Attendance ✕','Orders ✕'].map(x=>`<span class="b bg-dg">${x}</span>`).join('')}
+      ${['Plans ✓','Owner Account ✓'].map(x=>`<span class="b bg-ok">${x}</span>`).join('')}
+     </div>
+     <button class="btn" style="background:rgba(255,184,0,.15);color:var(--wn);border:1px solid rgba(255,184,0,.3)" onclick="GS.resetDemoData()">Reset Demo Data</button>
+    </div></div>
+
+    <div class="card" style="border-color:rgba(255,59,59,.3)"><div class="cb" style="padding:14px">
+     <div style="font-weight:700;margin-bottom:4px">🔴 Full Factory Reset</div>
+     <div class="tsm tmu" style="margin-bottom:12px">Sab kuch hata do — members, plans, products, transactions sab. Sirf tumhara owner login bachega. Bilkul fresh start.</div>
+     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+      ${['Members ✕','Transactions ✕','Products ✕','Plans ✕','Attendance ✕','Notifications ✕'].map(x=>`<span class="b bg-dg">${x}</span>`).join('')}
+      ${['Owner Login ✓'].map(x=>`<span class="b bg-ok">${x}</span>`).join('')}
+     </div>
+     <div style="display:flex;gap:10px">
+      <button class="btn bd" onclick="GS.fullReset()">⚠️ Full Factory Reset</button>
+      <button class="btn bg" onclick="GS.exportBackup()">📥 Export Backup First</button>
+     </div>
+    </div></div>
+   </div>
+
+   <h2 style="font-size:13px;font-weight:700;color:var(--mu);margin-bottom:12px;letter-spacing:.4px">☁️ CLOUD DATABASE</h2>
+   <div class="card mb20"><div class="cb">
+    <div id="sbStatus" class="alert ${this.sbReady?'alert-ok':'alert-wn'}" style="margin-bottom:16px">
+     ${this.sbReady?'✅ Connected to Supabase — data permanent hai':'⚠️ Abhi sirf local storage use ho raha hai. Supabase connect karo permanent backup ke liye.'}
+    </div>
+    <div class="f"><label>SUPABASE PROJECT URL</label>
+     <input id="sbUrl" value="${localStorage.getItem('gs_sb_url')||''}" placeholder="https://xxxxxxxxxxxx.supabase.co"></div>
+    <div class="f"><label>SUPABASE ANON KEY (PUBLIC)</label>
+     <input id="sbKey" type="password" value="${localStorage.getItem('gs_sb_key')||''}" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9…"></div>
+    <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+     <button class="btn bp" onclick="GS.saveSBConfig()">🔗 Save & Connect</button>
+     ${this.sbReady?`<button class="btn bg" onclick="GS.syncDown().then(()=>{GS.render();GS.toast('✅ Cloud se data sync ho gaya!','ac')})">🔄 Sync Now</button>`:''}
+     ${this.sbReady?`<button class="btn bg" onclick="GS.pushAllToCloud()">⬆️ Push All to Cloud</button>`:''}
+    </div>
+    <div class="card" style="border-color:rgba(200,255,0,.2)"><div class="cb" style="padding:14px">
+     <div style="font-weight:700;font-size:12px;color:var(--ac);margin-bottom:10px">📋 Supabase mein yeh SQL run karo (ek baar)</div>
+     <div style="background:var(--bg);border-radius:8px;padding:14px;font-family:monospace;font-size:11px;color:#aaa;line-height:1.8;overflow-x:auto;white-space:pre">CREATE TABLE app_data (
+  id    TEXT PRIMARY KEY,
+  data  JSONB NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE app_data ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "allow_all" ON app_data
+  FOR ALL TO anon
+  USING (true) WITH CHECK (true);</div>
+     <button class="btn bg bsm" style="margin-top:10px" onclick="navigator.clipboard.writeText('CREATE TABLE app_data (\\n  id    TEXT PRIMARY KEY,\\n  data  JSONB NOT NULL,\\n  updated_at TIMESTAMPTZ DEFAULT NOW()\\n);\\n\\nALTER TABLE app_data ENABLE ROW LEVEL SECURITY;\\n\\nCREATE POLICY \\"allow_all\\" ON app_data\\n  FOR ALL TO anon\\n  USING (true) WITH CHECK (true);').then(()=>GS.toast('✅ SQL copied!','ok'))">📋 Copy SQL</button>
+    </div></div>
+   </div></div>
+
+   <h2 style="font-size:13px;font-weight:700;color:var(--mu);margin-bottom:12px;letter-spacing:.4px">ACCOUNT</h2>
+   <div class="card"><div class="ch"><h3>Change Password</h3></div><div class="cb">
+    <div class="f"><label>CURRENT PASSWORD</label><input type="password" id="cp1" placeholder="••••••••"></div>
+    <div class="f"><label>NEW PASSWORD</label><input type="password" id="cp2" placeholder="••••••••"></div>
+    <div class="f"><label>CONFIRM NEW PASSWORD</label><input type="password" id="cp3" placeholder="••••••••"></div>
+    <button class="btn bp" onclick="GS.changePassword()">Update Password</button>
+   </div></div>`;
+ },
+
+ changePassword(){
+  const c=document.getElementById('cp1').value;
+  const n=document.getElementById('cp2').value;
+  const c2=document.getElementById('cp3').value;
+  if(!c||!n){this.toast('Sab fields bharo','dg');return;}
+  const users=this.get('users');const u=users.find(x=>x.id===this.user.id);
+  if(!u||u.pw!==c){this.toast('Current password galat hai','dg');return;}
+  if(n!==c2){this.toast('New passwords match nahi kar rahe','dg');return;}
+  u.pw=n;this.set('users',users);this.toast('✅ Password update ho gaya!','ok');
+ },
+
+ resetDemoData(){
+  this.confirmModal('Reset Demo Data',
+   'Demo members, transactions, products, attendance aur orders delete ho jaayenge.<br><br><span style="color:var(--ok)">Plans aur Owner account safe rahega.</span>',
+   ()=>{
+    ['members','transactions','products','orders','attendance','notifications'].forEach(k=>localStorage.removeItem('gs_'+k));
+    Object.keys(localStorage).filter(k=>k.startsWith('gs_att_')).forEach(k=>localStorage.removeItem(k));
+    localStorage.removeItem('gs_seeded');localStorage.removeItem('gs_attv2');
+    const owner=this.get('users').find(u=>u.role==='owner');
+    this.set('users',owner?[owner]:[]);
+    this.closeModal();
+    this.showModal('✅ Done!','<div class="alert alert-ok" style="margin-bottom:0">Demo data hata diya! Ab Members section mein real members add karo. Plans safe hain.</div>',()=>{this.closeModal();this.rSettings();},'Go to Settings');
+   },'Reset Demo Data');
+ },
+
+ fullReset(){
+  this.confirmModal('⚠️ Full Factory Reset',
+   'SAB DELETE HO JAAYEGA — Members, Plans, Products, Transactions, Attendance, sab kuch.<br><br>Sirf tumhara owner login bachega. Ye bilkul undo nahi hoga!',
+   ()=>{
+    const owner=this.get('users').find(u=>u.id===this.user.id);
+    Object.keys(localStorage).filter(k=>k.startsWith('gs_')).forEach(k=>localStorage.removeItem(k));
+    if(owner)this.set('users',[owner]);
+    this.closeModal();
+    this.showModal('✅ Factory Reset Complete','<div class="alert alert-ok" style="margin-bottom:0">Fresh start! Ab Plans → Members → Inventory mein jaake real data bharo.</div>',()=>{this.closeModal();this.rSettings();},'Go to Settings');
+   },'Yes, Full Reset');
+ },
+
+ exportBackup(){
+  const data={users:this.get('users').map(u=>({...u,pw:'[hidden]'})),members:this.get('members'),plans:this.get('plans'),transactions:this.get('transactions'),products:this.get('products'),orders:this.get('orders'),attendance:this.get('attendance'),exportedAt:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='gymsync-backup-'+new Date().toISOString().split('T')[0]+'.json';a.click();
+ },
+
+ // ══════════════════════════════════════════════════════════════
+ // MEMBER PAGES
+ // ══════════════════════════════════════════════════════════════
+
+ rMHome(){
+  const m=this.memberForUser();
+  const notifs=this.get('notifications').filter(n=>n.uid===this.user.id&&!n.read);
+  if(!m){document.getElementById('main').innerHTML=`<div class="es">⚠️<p>No membership found. Contact your gym admin.</p></div>`;return;}
+  const dl=this.daysLeft(m.end);
+  const pct=Math.max(0,Math.min(100,Math.round(dl/30*100)));
+  const products=this.get('products').filter(p=>p.gid===this.user.gid&&p.stock>0).slice(0,3);
+  document.getElementById('main').innerHTML=`
+   <div class="ph"><h1>Welcome, ${this.user.name.split(' ')[0]}! 👋</h1><p>${new Date().toDateString()}</p></div>
+   ${notifs.length?`<div class="alert alert-wn">🔔 You have ${notifs.length} unread notification${notifs.length>1?'s':''}. <a href="#" onclick="GS.go('member-notif')" style="color:var(--ac)">View</a></div>`:''}
+   <div class="mc">
+    <div class="mcp">${this.planName(m.plan)} MEMBERSHIP</div>
+    <div class="mcn">${m.name}</div>
+    <div class="mcr"><span>Member ID</span><strong class="tac">${m.mid}</strong></div>
+    <div class="mcr"><span>Status</span><strong>${this.statusBadge(m.status)}</strong></div>
+    <div class="mcr"><span>Valid Until</span><strong>${m.end}</strong></div>
+    <div class="mcr"><span>Days Remaining</span><strong style="color:${dl<7?'var(--dg)':dl<30?'var(--wn)':'var(--ok)'}">${dl>0?dl+' days':'Expired'}</strong></div>
+    <div class="pb"><div class="pf" style="width:${pct}%;background:${dl<7?'var(--dg)':dl<30?'var(--wn)':'var(--ac)'}"></div></div>
+   </div>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;align-items:start">
+    <div>${this.streakCard(m.id)}</div>
+    <div>${this.checkInCard(m)}</div>
+   </div>
+   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px">
+    <div class="sc a" style="cursor:pointer" onclick="GS.go('my-membership')"><div class="sl">MY PLAN</div><div class="sv" style="font-size:16px">${this.planName(m.plan)}</div></div>
+    <div class="sc g" style="cursor:pointer" onclick="GS.go('pay-fees')"><div class="sl">PAY FEES</div><div class="sv" style="font-size:14px">Renew →</div></div>
+    <div class="sc w" style="cursor:pointer" onclick="GS.go('shop')"><div class="sl">STORE</div><div class="sv" style="font-size:14px">Shop →</div></div>
+   </div>
+   <div class="card"><div class="ch"><h3>Featured Products</h3><button class="btn bg bsm" onclick="GS.go('shop')">View All</button></div>
+   <div class="cb"><div class="pg" style="grid-template-columns:repeat(3,1fr)">${products.map(p=>`
+    <div class="pc">
+     <div class="pi" style="height:90px">${p.emoji||'📦'}</div>
+     <div class="pif"><div class="pn">${p.name}</div><div class="ppr">${this.fmt(p.price)}</div></div>
+    </div>`).join('')}</div></div></div>`;
+ },
+
+ rMyMembership(){
+  const m=this.memberForUser();
+  if(!m){document.getElementById('main').innerHTML=`<div class="es">⚠️<p>No membership found.</p></div>`;return;}
+  const dl=this.daysLeft(m.end);
+  const plan=this.get('plans').find(p=>p.id===m.plan);
+  document.getElementById('main').innerHTML=`
+   <div class="ph"><h1>My Membership</h1></div>
+   <div class="mc" style="max-width:500px">
+    <div class="mcp">${plan?.name||'—'} MEMBERSHIP</div>
+    <div class="mcn">${m.name}</div>
+    <div class="mcr"><span>Member ID</span><strong class="tac">${m.mid}</strong></div>
+    <div class="mcr"><span>Start Date</span><strong>${m.start}</strong></div>
+    <div class="mcr"><span>Expiry Date</span><strong>${m.end}</strong></div>
+    <div class="mcr"><span>Days Remaining</span><strong style="color:${dl<7?'var(--dg)':dl<30?'var(--wn)':'var(--ok)'}">${dl>0?dl+' days':'Membership Expired'}</strong></div>
+   </div>
+   <div style="max-width:500px">
+    <div class="pb mb16"><div class="pf" style="width:${Math.max(0,Math.min(100,Math.round(dl/(plan?.months||1)/30*100)))}%"></div></div>
+    ${dl<=7?`<div class="alert alert-dg" style="margin-bottom:14px">⚠️ Your membership ${dl<=0?'has expired':'expires very soon'}! <button class="btn bp bsm" onclick="GS.go('pay-fees')">Renew Now</button></div>`:''}
+    ${plan?`<div class="card cb" style="margin-bottom:14px">
+     <h3 style="font-size:12px;font-weight:700;margin-bottom:12px;color:var(--mu)">PLAN DETAILS</h3>
+     <div class="ir"><span class="irl">Plan Name</span><span class="irv">${plan.name}</span></div>
+     <div class="ir"><span class="irl">Duration</span><span class="irv">${plan.months} month${plan.months>1?'s':''}</span></div>
+     <div class="ir"><span class="irl">Price</span><span class="irv tac">${this.fmt(plan.price)}</span></div>
+     <div class="ir" style="border-bottom:none"><span class="irl">Benefits</span><span class="irv">${plan.benefits||'—'}</span></div>
+    </div>`:''}
+    <button class="btn bp bfull" onclick="GS.go('pay-fees')">Renew Membership</button>
+   </div>`;
+ },
+
+ rPayFees(){
+  const m=this.memberForUser();
+  if(!m){document.getElementById('main').innerHTML=`<div class="es">⚠️<p>No membership found.</p></div>`;return;}
+  const plans=this.get('plans').filter(p=>p.gid===this.user.gid);
+  document.getElementById('main').innerHTML=`
+   <div class="ph"><h1>Pay Fees</h1><p>Renew or pay your membership fees online</p></div>
+   <div class="alert alert-wn" style="max-width:500px">🔧 Demo mode — no real payment is processed. Configure Razorpay in Settings for live payments.</div>
+   <h3 style="margin:16px 0 12px;font-size:13px;font-weight:700;color:var(--mu)">SELECT PLAN</h3>
+   <div style="display:grid;gap:10px;max-width:500px;margin-bottom:20px">
+   ${plans.map(p=>`
+    <div class="card cb" style="cursor:pointer;transition:.15s;${m.plan===p.id?'border-color:var(--ac)':''}" onclick="GS.selectPayPlan('${p.id}',this)">
+     <div class="fbet">
+      <div><div style="font-weight:700;font-size:15px">${p.name}</div><div class="tsm tmu">${p.months} month${p.months>1?'s':''} · ${p.benefits||''}</div></div>
+      <div style="text-align:right"><div class="ppr">${this.fmt(p.price)}</div><div class="tsm tmu">${this.fmt(Math.round(p.price/p.months))}/mo</div></div>
+     </div>
+    </div>`).join('')}
+   </div>
+   <div style="max-width:500px">
+    <h3 style="font-size:13px;font-weight:700;color:var(--mu);margin-bottom:12px">PAYMENT METHOD</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+     ${['UPI','Debit/Credit Card','Net Banking','Cash at Gym'].map(m=>`<div class="card cb" style="cursor:pointer;text-align:center;padding:14px" onclick="GS.selectPayMethod('${m}',this)">${m}</div>`).join('')}
+    </div>
+    <button class="btn bp bfull" id="payBtn" onclick="GS.processPayment()">Pay Now</button>
+   </div>`;
+  this.selectedPlan=plans[0]?.id;this.selectedMethod='UPI';
+  document.querySelector('.card.cb')?.style.setProperty('border-color','var(--ac)');
+ },
+ selectedPlan:null,selectedMethod:'UPI',
+ selectPayPlan(id,el){
+  this.selectedPlan=id;
+  document.querySelectorAll('#main .card.cb').forEach(c=>{c.style.borderColor='';c.style.border='1px solid var(--bd)';});
+  el.style.borderColor='var(--ac)';
+ },
+ selectPayMethod(m,el){
+  this.selectedMethod=m;
+  el.closest('#main').querySelectorAll('div[onclick*="selectPayMethod"]').forEach(c=>c.style.borderColor='');
+  el.style.borderColor='var(--ac)';
+ },
+ processPayment(){
+  const plan=this.get('plans').find(p=>p.id===this.selectedPlan);
+  if(!plan){this.toast('Plan select karo','dg');return;}
+  const m=this.memberForUser();if(!m)return;
+  this.showModal('💳 Payment Confirm Karo',`
+   <div class="mc" style="margin-bottom:0">
+    <div class="mcp">${plan.name} PLAN</div>
+    <div class="mcn" style="font-size:16px">${m.name}</div>
+    <div class="mcr"><span>Amount</span><strong class="tac" style="font-size:24px;font-weight:900">${this.fmt(plan.price)}</strong></div>
+    <div class="mcr"><span>Payment via</span><strong>${this.selectedMethod||'UPI'}</strong></div>
+    <div class="mcr"><span>Duration</span><strong>${plan.months} month${plan.months>1?'s':''}</strong></div>
+   </div>`,
+  ()=>{
+   const today=new Date().toISOString().split('T')[0];
+   const newEnd=new Date(Date.now()+plan.months*30*86400000).toISOString().split('T')[0];
+   const members=this.get('members');const idx=members.findIndex(x=>x.id===m.id);
+   if(idx>=0){members[idx]={...members[idx],plan:plan.id,start:today,end:newEnd,status:'active'};this.set('members',members);}
+   const txs=this.get('transactions');
+   txs.unshift({id:this.uid(),gid:this.user.gid,mid:m.id,mname:m.name,amount:plan.price,date:today,method:this.selectedMethod||'UPI',plan:plan.name,status:'paid',ref:'TXN'+Math.floor(Math.random()*900000+100000)});
+   this.set('transactions',txs);
+   const notifs=this.get('notifications');
+   notifs.push({id:this.uid(),uid:this.user.id,gid:this.user.gid,msg:`${this.fmt(plan.price)} payment confirmed — ${plan.name}`,type:'ok',date:today,read:false});
+   this.set('notifications',notifs);
+   this.closeModal();
+   this.toast(`✅ ${this.fmt(plan.price)} paid! Valid until ${newEnd}`,'ac');
+   this.go('payment-history');
+  },'💳 Pay '+this.fmt(plan.price));
+ },
+
+ rPayHistory(){
+  const m=this.memberForUser();if(!m){document.getElementById('main').innerHTML=`<div class="es"><p>No membership</p></div>`;return;}
+  const txs=this.get('transactions').filter(t=>t.mid===m.id);
+  document.getElementById('main').innerHTML=`
+   <div class="ph"><h1>Payment History</h1></div>
+   <div class="sg" style="grid-template-columns:repeat(2,1fr)">
+    <div class="sc a"><div class="sl">TOTAL PAID</div><div class="sv" style="font-size:18px">${this.fmt(txs.reduce((s,t)=>s+t.amount,0))}</div></div>
+    <div class="sc g"><div class="sl">TRANSACTIONS</div><div class="sv">${txs.length}</div></div>
+   </div>
+   <div class="card"><div class="ch"><h3>All Transactions</h3></div>
+   <div class="tw"><table><thead><tr><th>REF</th><th>PLAN</th><th>AMOUNT</th><th>METHOD</th><th>DATE</th><th>STATUS</th></tr></thead>
+   <tbody>${txs.length?txs.map(t=>`<tr><td class="tsm tmu">${t.ref}</td><td>${t.plan}</td><td style="font-weight:700">${this.fmt(t.amount)}</td><td>${t.method}</td><td>${t.date}</td><td>${this.statusBadge(t.status)}</td></tr>`).join(''):'<tr><td colspan="6"><div class="es"><p>No payments yet</p></div></td></tr>'}</tbody></table></div></div>`;
+ },
+
+ rShop(){
+  const products=this.get('products').filter(p=>p.gid===this.user.gid);
+  const cartCount=this.cart.reduce((s,i)=>s+i.qty,0);
+  document.getElementById('main').innerHTML=`
+   <div class="ph">
+    <h1>Supplement Store</h1><p>Premium fitness nutrition</p>
+   </div>
+   <div class="pg">${products.map(p=>`
+    <div class="pc">
+     <div class="pi">${p.emoji||'📦'}</div>
+     <div class="pif">
+      <div class="pn">${p.name}</div>
+      <div class="pbr">${p.brand} · ${p.cat}</div>
+      <div class="fbet" style="margin-bottom:10px"><span class="ppr">${this.fmt(p.price)}</span></div>
+      <div class="tsm tmu" style="margin-bottom:10px">${p.desc||''}</div>
+      <div>${p.stock>0
+       ?`<span class="b bg-ok" style="font-size:12px;padding:5px 14px;border-radius:6px">✓ Available</span>`
+       :`<span class="b bg-dg" style="font-size:12px;padding:5px 14px;border-radius:6px">✗ Out of Stock</span>`
+      }</div>
+     </div>
+    </div>`).join('')}
+   </div>`;
+ },
+ addToCart(pid){
+  const p=this.get('products').find(x=>x.id===pid);if(!p||p.stock===0)return;
+  const existing=this.cart.find(c=>c.pid===pid);
+  if(existing){existing.qty=Math.min(existing.qty+1,p.stock);}
+  else{this.cart.push({pid,name:p.name,price:p.price,qty:1,emoji:p.emoji});}
+  const count=this.cart.reduce((s,i)=>s+i.qty,0);
+  this.toast(`✅ Cart: ${count} item${count!==1?'s':''}  added`,'ok');
+ },
+
+ rCart(){
+  const total=this.cart.reduce((s,i)=>s+(i.price*i.qty),0);
+  document.getElementById('main').innerHTML=`
+   <div class="ph fbet"><div><h1>Shopping Cart</h1></div><button class="btn bg bsm" onclick="GS.go('shop')">← Back to Store</button></div>
+   ${this.cart.length===0?`<div class="card cb"><div class="es">🛒<p>Your cart is empty</p><button class="btn bp" style="margin-top:14px" onclick="GS.go('shop')">Browse Products</button></div></div>`:`
+   <div class="card mb20"><div class="cb">${this.cart.map((item,i)=>`
+    <div class="ci">
+     <span style="font-size:28px">${item.emoji||'📦'}</span>
+     <div style="flex:1"><div style="font-weight:600">${item.name}</div><div class="tsm tmu">${this.fmt(item.price)} each</div></div>
+     <div class="flex gap" style="align-items:center">
+      <button class="btn bg bsm" onclick="GS.cartQty(${i},-1)">−</button>
+      <span style="font-weight:700;min-width:24px;text-align:center">${item.qty}</span>
+      <button class="btn bg bsm" onclick="GS.cartQty(${i},1)">+</button>
+      <span style="font-weight:700;color:var(--ac)">${this.fmt(item.price*item.qty)}</span>
+      <button class="btn bd bsm" onclick="GS.cartRemove(${i})">×</button>
+     </div>
+    </div>`).join('')}
+   </div></div>
+   <div class="card cb" style="max-width:400px">
+    <div class="ir"><span class="irl">Subtotal</span><span class="irv">${this.fmt(total)}</span></div>
+    <div class="ir" style="border-bottom:none"><span class="irl">Shipping</span><span class="irv" style="color:var(--ok)">Free</span></div>
+    <div style="border-top:1px solid var(--bd);padding-top:14px;margin-top:4px;display:flex;justify-content:space-between;align-items:center">
+     <span style="font-weight:700">Total</span><span class="ppr">${this.fmt(total)}</span>
+    </div>
+    <button class="btn bp bfull" style="margin-top:14px" onclick="GS.placeOrder()">Place Order – ${this.fmt(total)}</button>
+   </div>`}`;
+ },
+ cartQty(i,d){
+  this.cart[i].qty=Math.max(1,this.cart[i].qty+d);this.rCart();
+ },
+ cartRemove(i){this.cart.splice(i,1);this.rCart();},
+ placeOrder(){
+  if(!this.cart.length){this.toast('Cart khaali hai','dg');return;}
+  const m=this.memberForUser();if(!m)return;
+  const total=this.cart.reduce((s,i)=>s+(i.price*i.qty),0);
+  this.showModal('🛒 Order Confirm Karo',`
+   <div style="margin-bottom:14px">${this.cart.map(i=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bd);font-size:12px"><span style="font-weight:600">${i.name} ×${i.qty}</span><span style="font-weight:700;color:var(--ac)">${this.fmt(i.price*i.qty)}</span></div>`).join('')}</div>
+   <div style="display:flex;justify-content:space-between;padding-top:4px"><strong>Total</strong><strong class="tac" style="font-size:18px">${this.fmt(total)}</strong></div>`,
+  ()=>{
+   const orders=this.get('orders');const products=this.get('products');
+   this.cart.forEach(item=>{const idx=products.findIndex(p=>p.id===item.pid);if(idx>=0)products[idx].stock=Math.max(0,products[idx].stock-item.qty);});
+   this.set('products',products);
+   orders.unshift({id:this.uid(),gid:this.user.gid,mid:m.id,mname:m.name,items:this.cart.map(i=>({pid:i.pid,name:i.name,qty:i.qty,price:i.price})),total,status:'pending',date:new Date().toISOString().split('T')[0]});
+   this.set('orders',orders);this.cart=[];
+   this.closeModal();
+   this.toast('✅ Order ho gaya! My Orders mein status dekho.','ac');
+   this.go('my-orders');
+  },'Place Order – '+this.fmt(total));
+ },
+
+ rMyOrders(){
+  const m=this.memberForUser();if(!m){document.getElementById('main').innerHTML=`<div class="es"><p>No membership</p></div>`;return;}
+  const orders=this.get('orders').filter(o=>o.mid===m.id).sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('main').innerHTML=`
+   <div class="ph"><h1>My Orders</h1></div>
+   ${orders.length===0?'<div class="card cb"><div class="es">📦<p>No orders yet. <a href="#" onclick="GS.go(\'shop\')" style="color:var(--ac)">Browse store</a></p></div></div>':
+   orders.map(o=>`<div class="card mb16"><div class="ch"><div>
+    <div style="font-weight:700">#${o.id.slice(-6).toUpperCase()}</div>
+    <div class="tsm tmu">${o.date}</div>
+   </div>${this.statusBadge(o.status)}</div><div class="cb">
+    ${o.items.map(i=>`<div class="ci"><div style="flex:1"><b>${i.name}</b><div class="tsm tmu">Qty: ${i.qty} × ${this.fmt(i.price)}</div></div><span style="font-weight:700">${this.fmt(i.price*i.qty)}</span></div>`).join('')}
+    <div style="text-align:right;padding-top:12px;border-top:1px solid var(--bd);margin-top:4px"><strong>Total: ${this.fmt(o.total)}</strong></div>
+   </div></div>`).join('')}`;
+ },
+
+ rMyQR(){
+  const m=this.memberForUser();
+  if(!m){document.getElementById('main').innerHTML=`<div class="es">⚠️<p>No membership found.</p></div>`;return;}
+  document.getElementById('main').innerHTML=`
+   <div class="ph"><h1>My QR Code</h1><p>Show this at the gym entrance for quick check-in</p></div>
+   <div class="qrc">
+    <div class="qrw" id="qrDiv"></div>
+    <div style="text-align:center"><div style="font-weight:800;font-size:16px">${m.name}</div>
+    <div class="tsm tmu">${m.mid} · ${this.planName(m.plan)}</div>
+    <div style="margin-top:8px">${this.statusBadge(m.status)}</div></div>
+   </div>
+   <div style="max-width:300px;margin:16px auto 0">${this.checkInCard(m)}</div>
+   <div class="card" style="max-width:400px;margin:16px auto 0">
+    <div class="ch"><h3>My Attendance (Last 10)</h3></div>
+    <div class="tw"><table><thead><tr><th>DATE</th><th>TIME</th><th>BY</th></tr></thead>
+    <tbody>${this.get('attendance').filter(a=>a.mid===m.id).slice(0,10).map(a=>`
+     <tr><td>${a.date}</td><td>${a.time}</td><td class="tsm tmu">${a.self?'Self':'Owner'}</td></tr>`).join('')||'<tr><td colspan="3"><div class="es" style="padding:20px"><p>No records yet</p></div></td></tr>'}</tbody></table></div>
+   </div>`;
+  setTimeout(()=>{
+   const el=document.getElementById('qrDiv');
+   if(el&&typeof QRCode!=='undefined'){
+    new QRCode(el,{text:JSON.stringify({id:m.id,mid:m.mid,name:m.name,plan:this.planName(m.plan)}),width:180,height:180,colorDark:'#000000',colorLight:'#ffffff'});
+   } else if(el){
+    el.innerHTML=`<div style="width:180px;height:180px;background:#000;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;text-align:center;padding:14px">${m.mid}<br>QR Library Loading…</div>`;
+   }
+  },100);
+ },
+
+ rMyAttendance(){
+  const m=this.memberForUser();if(!m){document.getElementById('main').innerHTML=`<div class="es"><p>No membership</p></div>`;return;}
+  const att=this.get('attendance').filter(a=>a.mid===m.id).sort((a,b)=>b.date.localeCompare(a.date));
+  const today=new Date().toISOString().split('T')[0];
+  const thisWeek=att.filter(a=>(new Date()-new Date(a.date))<7*86400000).length;
+  const thisMonth=att.filter(a=>{const d=new Date(a.date);const n=new Date();return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear();}).length;
+  document.getElementById('main').innerHTML=`
+   <div class="ph"><h1>My Attendance</h1></div>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;margin-bottom:4px">
+    <div>${this.streakCard(m.id)}</div>
+    <div>${this.checkInCard(m)}</div>
+   </div>
+   <div class="sg" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;margin-top:4px">
+    <div class="sc g"><div class="sl">THIS WEEK</div><div class="sv">${thisWeek}</div><div class="sd">days</div></div>
+    <div class="sc a"><div class="sl">THIS MONTH</div><div class="sv">${thisMonth}</div><div class="sd">days</div></div>
+    <div class="sc"><div class="sl">ALL TIME</div><div class="sv">${att.length}</div><div class="sd">total check-ins</div></div>
+   </div>
+   <div class="card"><div class="ch"><h3>Attendance Log</h3></div>
+   <div class="tw"><table><thead><tr><th>DATE</th><th>DAY</th><th>TIME</th><th>CHECKED IN BY</th></tr></thead>
+   <tbody>${att.length?att.map(a=>{
+    const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const day=days[new Date(a.date).getDay()];
+    return`<tr><td><b>${a.date}</b>${a.date===today?'<span class="b bg-ac" style="margin-left:6px">Today</span>':''}</td><td class="tmu">${day}</td><td>${a.time}</td><td>${a.self?'<span class="b bg-ok">Self</span>':'<span class="b bg-mu">Owner</span>'}</td></tr>`;
+   }).join(''):'<tr><td colspan="4"><div class="es" style="padding:30px">📅<p>No attendance yet. Check in above!</p></div></td></tr>'}</tbody></table></div></div>`;
+ },
+ rMemberNotif(){
+  const notifs=this.get('notifications').filter(n=>n.uid===this.user.id);
+  const unread=notifs.filter(n=>!n.read).length;
+  document.getElementById('main').innerHTML=`
+   <div class="ph fbet"><div><h1>Notifications</h1><p>${unread} unread</p></div>${unread>0?`<button class="btn bg bsm" onclick="GS.markAllRead()">Mark All Read</button>`:''}</div>
+   <div class="card">${notifs.length?notifs.sort((a,b)=>b.date.localeCompare(a.date)).map(n=>`
+    <div class="ni2${n.read?'':' unr'}">
+     ${n.read?'<div style="width:7px;flex-shrink:0"></div>':'<div class="ndot"></div>'}
+     <div style="flex:1"><div style="font-size:13px;font-weight:${n.read?'400':'600'}">${n.msg}</div>
+      <div class="tsm tmu" style="margin-top:3px">${n.date}</div></div>
+    </div>`).join(''):'<div class="es">🔔<p>No notifications</p></div>'}</div>`;
+ },
+
+ rMyProfile(){
+  const m=this.memberForUser();
+  document.getElementById('main').innerHTML=`
+   <div class="ph"><h1>My Profile</h1></div>
+   <div class="card cb" style="max-width:500px">
+    <div style="text-align:center;margin-bottom:22px">
+     <div style="width:72px;height:72px;border-radius:50%;background:var(--acd);border:2px solid var(--ac);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;color:var(--ac);margin:0 auto 10px">${this.user.name[0]}</div>
+     <div style="font-size:18px;font-weight:800">${this.user.name}</div>
+     <div class="tsm tmu">${this.user.email}</div>
+     ${m?`<div style="margin-top:6px"><span class="b bg-ac">${m.mid}</span></div>`:''}
+    </div>
+    <div class="f"><label>FULL NAME</label><input id="pfn" value="${this.user.name}"></div>
+    <div class="f"><label>EMAIL</label><input type="email" id="pfe" value="${this.user.email}"></div>
+    <div class="f"><label>PHONE</label><input id="pfph" value="${m?.phone||this.user.phone||''}"></div>
+    <div class="f"><label>ADDRESS</label><input id="pfad" value="${m?.addr||''}"></div>
+    <button class="btn bp" onclick="GS.saveProfile()">Save Profile</button>
+   </div>`;
+ },
+ saveProfile(){
+  const users=this.get('users');const idx=users.findIndex(u=>u.id===this.user.id);
+  if(idx>=0){users[idx].name=document.getElementById('pfn').value;this.set('users',users);this.user.name=users[idx].name;}
+  const m=this.memberForUser();
+  if(m){const members=this.get('members');const mi=members.findIndex(x=>x.id===m.id);
+   if(mi>=0){members[mi]={...members[mi],phone:document.getElementById('pfph').value,addr:document.getElementById('pfad').value};this.set('members',members);}}
+  this.toast('Profile save ho gayi!','ok');this.renderSidebar();
+ },
+
+ // ── Streak calculation ───────────────────────────────────────
+ calcStreak(mid){
+  const att=this.get('attendance').filter(a=>a.mid===mid);
+  // Always use ISO UTC string for dates — consistent with stored values
+  const getD=(n)=>new Date(Date.now()-n*86400000).toISOString().split('T')[0];
+  const dset=new Set(att.map(a=>a.date));
+  if(!dset.size)return{current:0,best:0,dates:[]};
+
+  // Current streak: start from today; if today absent, try yesterday (might not have checked in yet)
+  let cur=0;
+  const off=dset.has(getD(0))?0:dset.has(getD(1))?1:null;
+  if(off!==null) for(let i=off;i<400&&dset.has(getD(i));i++)cur++;
+
+  // Best streak: sort asc, count longest consecutive run
+  const sorted=[...dset].sort();
+  let best=Math.max(cur,sorted.length?1:0),run=1;
+  for(let i=1;i<sorted.length;i++){
+   const diff=Math.round((new Date(sorted[i])-new Date(sorted[i-1]))/86400000);
+   if(diff===1){run++;if(run>best)best=run;}else run=1;
+  }
+  return{current:cur,best,dates:[...dset].sort((a,b)=>b.localeCompare(a))};
+ },
+
+ streakCard(mid){
+  const{current,best,dates}=this.calcStreak(mid);
+  const days=['S','M','T','W','T','F','S'];
+  const dots=Array.from({length:7},(_,i)=>{
+   const dt=new Date(Date.now()-(6-i)*86400000);
+   const str=dt.toISOString().split('T')[0]; // UTC — matches stored dates
+   const hit=dates.includes(str);
+   const isToday=i===6;
+   return`<div style="display:flex;flex-direction:column;align-items:center;gap:5px">
+    <div style="width:36px;height:36px;border-radius:50%;background:${hit?'var(--ac)':'var(--bd)'};border:2px solid ${hit?'var(--ac)':isToday?'rgba(200,255,0,.3)':'var(--bd)'};display:flex;align-items:center;justify-content:center;font-size:16px">${hit?'✓':''}</div>
+    <span style="font-size:9px;font-weight:600;color:${isToday?'var(--ac)':'var(--mu)'}">${days[dt.getDay()]}</span>
+   </div>`;
+  }).join('');
+  const checkedToday=dates.includes(new Date().toISOString().split('T')[0]);
+  const todayLine=checkedToday
+   ?'<span style="font-size:11px;color:var(--ok);font-weight:600">✅ Checked in today</span>'
+   :'<span style="font-size:11px;color:var(--wn);font-weight:600">⚠️ Not checked in today yet</span>';
+  const msg=current===0?'Check in to start your streak! 💪':current===1?'Day 1 — great start! 🌟':current<5?'Building momentum! 🔥':current<14?'You\'re on fire! Keep going! 🔥🔥':current<30?'Two weeks strong! Beast mode! 🏆':'Legend status! 🔥🏆🔥';
+  const flame=current===0?'⚫':current<3?'🔥':current<7?'🔥':current<14?'🔥🔥':'🔥🔥🔥';
+  return`<div style="background:linear-gradient(135deg,#111,#1a1a1a);border:1px solid ${current>0?'rgba(200,255,0,.3)':'var(--bd)'};border-radius:14px;padding:22px;margin-bottom:16px;text-align:center;position:relative;overflow:hidden">
+   ${current>0?`<div style="position:absolute;top:-20px;right:-20px;font-size:80px;opacity:.07">${flame}</div>`:''}
+   <div style="font-size:36px;margin-bottom:4px">${current>0?flame:'💤'}</div>
+   <div style="font-size:52px;font-weight:900;letter-spacing:-3px;line-height:1;color:${current>0?'var(--ac)':'var(--mu)'};margin-bottom:4px">${current}</div>
+   <div style="font-size:14px;font-weight:600;color:var(--mu);margin-bottom:4px">day streak</div>
+   <div style="font-size:11px;color:${current>0?'var(--ac)':'var(--mu)'};margin-bottom:8px">${msg}</div>
+   <div style="margin-bottom:14px">${todayLine}</div>
+   <div style="display:flex;justify-content:center;gap:8px;margin-bottom:14px">${dots}</div>
+   <div style="display:flex;justify-content:center;gap:24px">
+    <div><div style="font-size:11px;color:var(--mu)">Best Streak</div><div style="font-size:18px;font-weight:800;color:var(--wn)">${best} days</div></div>
+    <div style="width:1px;background:var(--bd)"></div>
+    <div><div style="font-size:11px;color:var(--mu)">Total Check-ins</div><div style="font-size:18px;font-weight:800">${dates.length}</div></div>
+   </div>
+  </div>`;
+ },
+
+ // ── Self Check-In ────────────────────────────────────────────
+ checkInCard(m){
+  const today=new Date().toISOString().split('T')[0];
+  const att=this.get('attendance');
+  const alreadyIn=att.some(a=>a.mid===m.id&&a.date===today);
+  if(alreadyIn){
+   const rec=att.find(a=>a.mid===m.id&&a.date===today);
+   return`<div class="alert alert-ok" style="margin-bottom:16px;border-radius:10px;padding:14px 16px">
+    <div style="display:flex;align-items:center;gap:10px;width:100%">
+     <span style="font-size:22px">✅</span>
+     <div><div style="font-weight:700">Checked in today</div>
+     <div class="tsm" style="margin-top:2px">At ${rec?.time||'—'} · ${today}</div></div>
+    </div></div>`;
+  }
+  return`<div style="background:var(--acd);border:1px solid rgba(200,255,0,.25);border-radius:10px;padding:16px;margin-bottom:16px;text-align:center">
+   <div style="font-size:28px;margin-bottom:6px">🏋️</div>
+   <div style="font-weight:700;margin-bottom:4px">Mark Today's Attendance</div>
+   <div class="tsm tmu" style="margin-bottom:12px">${today}</div>
+   <button class="btn bp bfull" onclick="GS.selfCheckIn()">Check In Now</button>
+  </div>`;
+ },
+ selfCheckIn(){
+  const m=this.memberForUser();if(!m)return;
+  if(m.status==='expired'){this.toast('Membership expired! Pehle renew karo.','dg');return;}
+  const today=new Date().toISOString().split('T')[0];
+  const att=this.get('attendance');
+  if(att.some(a=>a.mid===m.id&&a.date===today)){this.toast('Aaj pehle se check-in ho chuka hai!','wn');return;}
+  att.push({id:this.uid(),gid:this.user.gid,mid:m.id,mname:m.name,date:today,time:new Date().toTimeString().slice(0,5),self:true});
+  this.set('attendance',att);
+  const{current}=this.calcStreak(m.id);
+  const streakMsg=current===1?'Day 1 — great start! 🌟':current<7?`🔥 ${current} day streak! Keep it up!`:`🔥🔥 ${current} day streak! You're on fire!`;
+  // Show brief toast then re-render
+  const toast=document.createElement('div');
+  toast.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ac);color:#000;padding:12px 24px;border-radius:99px;font-weight:700;font-size:14px;z-index:999;white-space:nowrap;box-shadow:0 4px 20px rgba(200,255,0,.4)';
+  toast.textContent=streakMsg;
+  document.body.appendChild(toast);
+  setTimeout(()=>toast.remove(),2800);
+  this.render();
+ },
+ // ── Modal system ─────────────────────────────────────────────
+ confirmModal(title,html,onYes,yesLabel){
+  this.showModal(title,`<div class="alert alert-dg" style="margin-bottom:0;align-items:flex-start">${html}</div>`,()=>{this.closeModal();onYes();},yesLabel||'🗑️ Delete Karo');
+ },
+ showModal(title,body,onConfirm,confirmText){
+  const html=`<div class="mo">
+   <div class="mh"><h2>${title}</h2><button class="xbtn" onclick="GS.closeModal()">×</button></div>
+   <div class="mbody">${body}</div>
+   <div class="mfoot">
+    <button class="btn bg" onclick="GS.closeModal()">Cancel</button>
+    <button class="btn bp" id="mConfirm">${confirmText||'Confirm'}</button>
+   </div></div>`;
+  const con=document.getElementById('mCon');con.innerHTML=html;con.style.display='flex';
+  document.getElementById('mConfirm').onclick=onConfirm;
+ },
+ closeModal(){document.getElementById('mCon').style.display='none';document.getElementById('mCon').innerHTML='';},
+
+ // ── Toast & Confirm helpers (replace broken confirm/alert) ───
+ toast(msg,type='ok'){
+  const c={ok:'var(--ok)',dg:'var(--dg)',wn:'var(--wn)',ac:'var(--ac)'};
+  const tc={ok:'#000',dg:'#fff',wn:'#000',ac:'#000'};
+  const el=document.createElement('div');
+  el.style.cssText=`position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:${c[type]||c.ok};color:${tc[type]||'#000'};padding:12px 26px;border-radius:99px;font-weight:700;font-size:13px;z-index:9999;white-space:nowrap;box-shadow:0 6px 24px rgba(0,0,0,.35);transition:opacity .3s;max-width:90vw;text-align:center`;
+  el.textContent=msg;document.body.appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';setTimeout(()=>el.remove(),300);},2800);
+ },
+ confirmDel(itemLabel,onYes){
+  this.showModal('Delete karna chahte ho?',
+   `<div class="alert alert-dg" style="margin-bottom:0">⚠️ <strong>${itemLabel}</strong> permanently delete ho jaayega. Ye undo nahi hoga.</div>`,
+   ()=>{this.closeModal();onYes();},'🗑️ Haan, Delete Karo');
+ },
+ confirmAct(title,body,onYes,yesLabel='Confirm'){
+  this.showModal(title,`<div class="alert alert-wn" style="margin-bottom:0">${body}</div>`,
+   ()=>{this.closeModal();onYes();},yesLabel);
+ },
+
+ // ── Init ─────────────────────────────────────────────────────
+ // ── Dashboard overrides ──────────────────────────────────────
+ getDashOv(){try{return JSON.parse(localStorage.getItem('gs_dash_ov')||'{}');}catch{return{};}},
+ setDashOv(k,v){const o=this.getDashOv();if(v===''||v===null){delete o[k];}else{o[k]=Number(v);}localStorage.setItem('gs_dash_ov',JSON.stringify(o));},
+ clearDashOv(){localStorage.removeItem('gs_dash_ov');this.go('dashboard');},
+ editDashboardModal(){
+  const ov=this.getDashOv();
+  const members=this.get('members').filter(m=>m.gid===this.user.gid);
+  const txs=this.get('transactions').filter(t=>t.gid===this.user.gid&&t.status==='paid');
+  const realRev=txs.reduce((s,t)=>s+t.amount,0);
+  const realActive=members.filter(m=>m.status==='active').length;
+  const today=new Date().toISOString().split('T')[0];
+  const realToday=txs.filter(t=>t.date===today).reduce((s,t)=>s+t.amount,0);
+  this.showModal('✏️ Edit Dashboard',`
+   <div class="tabs"><button class="tb2 active" onclick="this.closest('.mo').querySelectorAll('.tab-pane').forEach((p,i)=>{p.style.display=i===0?'block':'none'});this.parentNode.querySelectorAll('.tb2').forEach(b=>b.classList.remove('active'));this.classList.add('active')">Override Stats</button>
+    <button class="tb2" onclick="this.closest('.mo').querySelectorAll('.tab-pane').forEach((p,i)=>{p.style.display=i===1?'block':'none'});this.parentNode.querySelectorAll('.tb2').forEach(b=>b.classList.remove('active'));this.classList.add('active')">Quick Add Income</button></div>
+   <div class="tab-pane" style="display:block">
+    <div class="alert alert-wn" style="margin-bottom:14px;font-size:11px">ℹ️ Override sirf dashboard display ke liye hai — real data safe rahta hai.</div>
+    <div class="row-2">
+     <div class="f"><label>TOTAL REVENUE DISPLAY</label><input id="ov_rev" type="number" value="${ov.totalRev||''}" placeholder="Real: ${this.fmt(realRev)}"></div>
+     <div class="f"><label>TODAY'S COLLECTION</label><input id="ov_today" type="number" value="${ov.todayRev||''}" placeholder="Real: ${this.fmt(realToday)}"></div>
+    </div>
+    <div class="row-2">
+     <div class="f"><label>ACTIVE MEMBERS DISPLAY</label><input id="ov_active" type="number" value="${ov.active||''}" placeholder="Real: ${realActive}"></div>
+     <div class="f"><label>TOTAL MEMBERS DISPLAY</label><input id="ov_total" type="number" value="${ov.total||''}" placeholder="Real: ${members.length}"></div>
+    </div>
+    <button class="btn bd bsm" onclick="GS.clearDashOv();GS.closeModal()" style="margin-top:4px">🗑️ Clear All Overrides</button>
+   </div>
+   <div class="tab-pane" style="display:none">
+    <div class="alert alert-ok" style="margin-bottom:14px;font-size:11px">✅ Yahan cash/manual income directly record karo — transactions mein add hoga.</div>
+    <div class="f"><label>AMOUNT (₹)*</label><input id="qi_amt" type="number" placeholder="e.g. 1500"></div>
+    <div class="row-2">
+     <div class="f"><label>METHOD</label><select id="qi_meth"><option>Cash</option><option>UPI</option><option>Card</option><option>Net Banking</option></select></div>
+     <div class="f"><label>DATE</label><input id="qi_date" type="date" value="${today}"></div>
+    </div>
+    <div class="f"><label>DESCRIPTION / NOTE</label><input id="qi_note" placeholder="e.g. Walk-in fees, Locker charge, Extra session"></div>
+   </div>`,
+  ()=>{
+   // Save overrides
+   this.setDashOv('totalRev',document.getElementById('ov_rev').value);
+   this.setDashOv('todayRev',document.getElementById('ov_today').value);
+   this.setDashOv('active',document.getElementById('ov_active').value);
+   this.setDashOv('total',document.getElementById('ov_total').value);
+   // Quick income
+   const amt=parseInt(document.getElementById('qi_amt').value)||0;
+   if(amt>0){
+    const txs=this.get('transactions');
+    txs.unshift({id:this.uid(),gid:this.user.gid,mid:'manual',mname:document.getElementById('qi_note').value||'Manual Entry',amount:amt,date:document.getElementById('qi_date').value||today,method:document.getElementById('qi_meth').value,plan:'Manual',status:'paid',ref:'MNL'+Math.floor(Math.random()*900000+100000)});
+    this.set('transactions',txs);
+   }
+   this.closeModal();this.go('dashboard');
+  },'Apply Changes');
+ },
+
+ // ── Supabase settings helpers ────────────────────────────────
+ async saveSBConfig(){
+  const url=document.getElementById('sbUrl').value.trim();
+  const key=document.getElementById('sbKey').value.trim();
+  if(!url||!key){this.toast('URL aur Key dono bharo','dg');return;}
+  document.getElementById('sbStatus').textContent='🔄 Testing connection…';
+  const ok=await this.testSBConnection(url,key);
+  if(ok){
+   localStorage.setItem('gs_sb_url',url);
+   localStorage.setItem('gs_sb_key',key);
+   this.initSB();
+   this.toast('✅ Supabase connected! Ab Push All to Cloud dabao.','ac');
+   this.rSettings();
+  }else{
+   this.toast('❌ Connection fail. URL/Key check karo aur app_data table bani hai?','dg');
+   document.getElementById('sbStatus').textContent='❌ Connection failed';
+  }
+ },
+ async pushAllToCloud(){
+  if(!this.sb){this.toast('Pehle Supabase connect karo','dg');return;}
+  const tables=['users','members','plans','transactions','products','orders','attendance','notifications'];
+  let count=0;
+  for(const t of tables){
+   const d=this.get(t);
+   if(d.length){
+    await this.sb.from('app_data').upsert({id:t,data:d,updated_at:new Date().toISOString()},{onConflict:'id'});
+    count++;
+   }
+  }
+  this.dot('☁️ All synced','var(--ok)');
+  this.toast(`✅ ${count} tables cloud pe push ho gayi!`,'ac');
+ },
+
+ // ── Attendance migration – give demo member a real streak ───
+ migrateAtt(){
+  // Runs once per calendar day — keeps demo streak fresh & current
+  const today=new Date().toISOString().split('T')[0];
+  if(localStorage.getItem('gs_att_'+today))return;
+  const att=this.get('attendance');
+  // i starts at 1 (yesterday) — today (i=0) is NEVER auto-added.
+  // Member must manually check in for today. That's what makes the streak real.
+  for(let i=1;i<21;i++){
+   const dt=new Date(Date.now()-i*86400000).toISOString().split('T')[0];
+   if(!att.some(a=>a.mid==='m1'&&a.date===dt))
+    att.push({id:this.uid(),gid:'gym1',mid:'m1',mname:'John Doe',date:dt,time:['06:30','07:00','07:15','08:00'][i%4],self:true});
+   if(i<7&&!att.some(a=>a.mid==='m3'&&a.date===dt))
+    att.push({id:this.uid(),gid:'gym1',mid:'m3',mname:'Arjun Singh',date:dt,time:'06:00',self:true});
+  }
+  this.set('attendance',att);
+  localStorage.setItem('gs_att_'+today,'1');
+ },
+ init(){
+  this.seed();
+  this.migrateAtt();
+  document.getElementById('loginPw').addEventListener('keydown',e=>{if(e.key==='Enter')this.login();});
+ }
+};
+
+GS.init();
+</script>
+</body>
+</html>
